@@ -40,11 +40,17 @@ INSTALLED_APPS = [
     'group.apps.GroupConfig',
     'note.apps.NoteConfig',
     'schedule.apps.ScheduleConfig',
-    'temporary_group.apps.TemporaryConfig',
+    'temporary_group.apps.TemporaryGroupConfig',
     'timetable.apps.TimetableConfig',
-    'user_profile.apps.User_profileConfig',
+    'user_profile.apps.UserProfileConfig',
     'vote.apps.VoteConfig',
+    'api.apps.ApiConfig',
+    'rest_framework',
+    'bootstrap4',
 ]
+
+
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -81,8 +87,12 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'MyDay',
+        'USER':'MyDay110504',
+        'PASSWORD':'10656004',
+        'HOST':'mydaydb.cjadqiztqjax.ap-northeast-1.rds.amazonaws.com',
+        'PORT':'3306',
     }
 }
 
