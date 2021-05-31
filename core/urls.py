@@ -33,9 +33,11 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from api.views import friend as friend_views
+from api.views import group as group_views
 
 router = DefaultRouter()
 router.register('friend', friend_views.FriendViewSet)
+router.register('group', group_views.GroupViewSet)
 
 urlpatterns = [
     path('api/', include(router.urls)),
