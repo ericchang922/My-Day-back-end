@@ -35,11 +35,13 @@ from rest_framework.routers import DefaultRouter
 from api.views import friend as friend_views
 from api.views import group as group_views
 from api.views import studyplan as studyplan_views
+from api.views import temporary_group as temporary_group_views
 
 router = DefaultRouter()
 router.register('friend', friend_views.FriendViewSet)
 router.register('group', group_views.GroupViewSet)
 router.register('studyplan', studyplan_views.StudyPlanViewSet)
+router.register('temporary_group', temporary_group_views.TemporaryGroupViewSet)
 
 urlpatterns = [
     path('api/', include(router.urls)),
