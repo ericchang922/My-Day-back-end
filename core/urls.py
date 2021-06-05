@@ -39,6 +39,8 @@ from api.views import temporary_group as temporary_group_views
 
 #account
 import account.views as account_views
+# schedule
+from schedule import views as schedule_views
 
 router = DefaultRouter()
 router.register('friend', friend_views.FriendViewSet)
@@ -48,8 +50,12 @@ router.register('temporary_group', temporary_group_views.TemporaryGroupViewSet)
 
 #account
 router.register('account', account_views.AccountViewSet)
+# schedule
+router.register('schedule', schedule_views.ScheduleViewSet)
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
+]
 ]
