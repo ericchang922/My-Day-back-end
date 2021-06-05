@@ -152,6 +152,7 @@ class GroupInviteList(models.Model):
     status_id = models.IntegerField()
     inviter_id = models.CharField(max_length=255)
     inviter_name = models.CharField(max_length=255, blank=True, null=True)
+    is_temporary_group = models.IntegerField()
 
     class Meta:
         managed = False  # Created from a view. Don't remove.
