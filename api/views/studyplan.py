@@ -94,7 +94,7 @@ class StudyPlanViewSet(ModelViewSet):
             })
         else:
             return Response({
-                '編輯讀書計畫結果': '您非此學習計畫建立者，無法編輯'
+                '編輯讀書計畫結果': '您非此讀書計畫建立者，無法編輯'
             })
 
 
@@ -119,7 +119,7 @@ class StudyPlanViewSet(ModelViewSet):
             })
         else:
             return Response({
-                '共享讀書計畫結果': '您非此學習計畫建立者，無法分享'
+                '共享讀書計畫結果': '您非此讀書計畫建立者，無法分享'
             })
 
 
@@ -142,7 +142,7 @@ class StudyPlanViewSet(ModelViewSet):
             })
         else:
             return Response({
-                '取消分享共同讀書計畫結果': '您非此學習計畫建立者，無法取消分享'
+                '取消分享共同讀書計畫結果': '您非此讀書計畫建立者，無法取消分享'
             })
 
     @action(detail=False, methods=['DELETE'])
@@ -163,11 +163,11 @@ class StudyPlanViewSet(ModelViewSet):
             sc.delete()
 
             return Response({
-                '刪除學習計畫結果': '成功'
+                '刪除讀書計畫結果': '成功'
             })
         else:
             return Response({
-                '編輯讀書計畫結果': '您非此學習計畫建立者，無法刪除'
+                '刪除讀書計畫結果': '您非此讀書計畫建立者，無法刪除'
             })
 
     @action(detail=False)
@@ -194,7 +194,7 @@ class StudyPlanViewSet(ModelViewSet):
             })
         else:
             return Response({
-                '沒有學習計畫'
+                '沒有讀書計畫'
             })
 
 
@@ -218,7 +218,7 @@ class StudyPlanViewSet(ModelViewSet):
             })
         else:
             return Response({
-                '沒有個人學習計畫'
+                '沒有個人讀書計畫'
             })
 
     @action(detail=False)
@@ -241,7 +241,7 @@ class StudyPlanViewSet(ModelViewSet):
             })
         else:
             return Response({
-                '沒有群組學習計畫'
+                '沒有群組讀書計畫'
             })
 
     @action(detail=False)
