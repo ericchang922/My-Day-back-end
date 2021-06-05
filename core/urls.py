@@ -37,13 +37,20 @@ from api.views import group as group_views
 from api.views import studyplan as studyplan_views
 from api.views import temporary_group as temporary_group_views
 
+# schedule
+from schedule import views as schedule_views
+
 router = DefaultRouter()
 router.register('friend', friend_views.FriendViewSet)
 router.register('group', group_views.GroupViewSet)
 router.register('studyplan', studyplan_views.StudyPlanViewSet)
 router.register('temporary_group', temporary_group_views.TemporaryGroupViewSet)
 
+# schedule
+router.register('schedule', schedule_views.ScheduleViewSet)
+
+
 urlpatterns = [
-    path('api/', include(router.urls)),
     path('admin/', admin.site.urls),
+    path('', include(router.urls)),
 ]
