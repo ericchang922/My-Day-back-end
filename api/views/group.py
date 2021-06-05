@@ -117,7 +117,7 @@ class GroupViewSet(ModelViewSet):
     @action(detail=False)
     def _list(self, request):
         uid = request.query_params.get('uid')
-        gr = GroupList.objects.filter(user_id=uid, status_id__in=[1,4])
+        gr = GroupList.objects.filter(user_id=uid, status_id__in=[1,4], is_temporary_group=0)
 
         if gr.count() > 0:
             return Response({
@@ -197,7 +197,7 @@ class GroupViewSet(ModelViewSet):
     @action(detail=False)
     def invite_list(self, request):
         uid = request.query_params.get('uid')
-        gr = GroupInviteList.objects.filter(user_id=uid,status_id=2)
+        gr = GroupInviteList.objects.filter(user_id=uid,status_id=2, is_temporary_group=0)
 
         if gr.count() > 0:
             return Response({
@@ -224,8 +224,9 @@ class GroupViewSet(ModelViewSet):
 
         ugr = GroupMember.objects.filter(user_id=uid, group_no=groupNum)
         gr = GroupMember.objects.filter(group_no=groupNum, status_id=4)
+        grm = GroupMember.objects.filter(group_no=groupNum, status_id__in=[1, 2])
 
-        if ugr.first().status_id == 4 and gr.count() == 1:
+        if ugr.first().status_id == 4 and gr.count() == 1 and grm.count() > 0:
             return Response({
                 '退出群組結果': '您是唯一管理者，需先指定另一位管理者才能退出'
             })

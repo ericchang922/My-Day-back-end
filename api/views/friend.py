@@ -69,16 +69,12 @@ class FriendViewSet(ModelViewSet):
         pl = Account.objects.get(user_id=friendId).is_public
         plt = Friend.objects.filter(user_id=friendId,related_person=uid).first().is_public_timetable
 
-        ptn = fr.first().is_public_timetable
-        if pl == 1:
+        ptn = pt.values('timetable_no')[0]['timetable_no']
+        if pl == 0 or (pl == 1 and plt == 0) or pt.count() == 0:
             ptn = 0
-        if pl == 0 and plt == 1:
-            ptn = 0
-        if pt.count() == 0:
-            ptn = None
 
         return Response({
-            'photo': base64.b64encode(fr.first().photo).decode(),
+            'photo': base64.b64encode(fr.first().photo),
             'friendName': fr.first().name,
             'timetableId': ptn,
         })
@@ -92,7 +88,7 @@ class FriendViewSet(ModelViewSet):
             return Response({
                 'friend': [
                     {
-                        'photo': base64.b64encode(f.photo).decode(),
+                        'photo': base64.b64encode(f.photo),
                         'friendId': f.related_person,
                         'friendName': f.name,
                         'relationId': f.relation_id,
@@ -114,7 +110,7 @@ class FriendViewSet(ModelViewSet):
             return Response({
                 'friend': [
                     {
-                        'photo': base64.b64encode(f.photo).decode(),
+                        'photo': base64.b64encode(f.photo),
                         'friendId': f.related_person,
                         'friendName': f.name,
                     }
@@ -135,7 +131,7 @@ class FriendViewSet(ModelViewSet):
             return Response({
                 'friend': [
                     {
-                        'photo': base64.b64encode(f.photo).decode(),
+                        'photo': base64.b64encode(f.photo),
                         'friendId': f.related_person,
                         'friendName': f.name,
                     }
@@ -147,29 +143,24 @@ class FriendViewSet(ModelViewSet):
                 '沒有好友邀請'
             })
 
-
-
-
     @action(detail=False, methods=['PATCH'])
     def add_reply(self, request):
         uid = request.query_params.get('uid')
         friendId = request.query_params.get('friendId')
         relationId = int(request.query_params.get('relationId'))
 
-        if relationId == 1:
-            fr = Friend.objects.filter(user=uid, related_person=friendId)
-            fr.update(relation=1)
+        fr_u = Friend.objects.filter(user=uid, related_person=friendId)
+        fr_r = Friend.objects.filter(related_person=uid, user=friendId)
 
-            fr = Friend.objects.filter(related_person=uid, user=friendId)
-            fr.update(relation=1)
+        if relationId == 1:
+            fr_u.update(relation=1)
+            fr_r.update(relation=1)
             return Response({
                 '加好友回覆結果': '已接受邀請'
             })
         elif relationId == 5:
-            fr = Friend.objects.filter(user=uid, related_person=friendId)
-            fr.delete()
-            fr = Friend.objects.filter(related_person=uid, user=friendId)
-            fr.delete()
+            fr_u.delete()
+            fr_r.delete()
             return Response({
                 '加好友回覆結果': '拒絕成功'
             })
