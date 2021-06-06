@@ -69,9 +69,14 @@ class FriendViewSet(ModelViewSet):
         pl = Account.objects.get(user_id=friendId).is_public
         plt = Friend.objects.filter(user_id=friendId,related_person=uid).first().is_public_timetable
 
-        ptn = pt.values('timetable_no')[0]['timetable_no']
-        if pl == 0 or (pl == 1 and plt == 0) or pt.count() == 0:
-            ptn = 0
+        ptn = 0
+        if pt.count() > 0:
+            ptn = pt.values('timetable_no')[0]['timetable_no']
+            if pl == 0 or (pl == 1 and plt == 0):
+                ptn = 0
+        else:
+            pass
+
 
         return Response({
             'photo': base64.b64encode(fr.first().photo),
