@@ -23,4 +23,6 @@ class AccountViewSet(ModelViewSet):
             data['userName'] = account.name
             data['password'] = account.password
             data['response'] = '成功'
+        else:
+            data['response'] = '失敗，這個email已有人使用'
         return Response(data)

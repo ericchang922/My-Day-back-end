@@ -17,8 +17,3 @@ class RegisterSerializer(serializers.ModelSerializer):
         account.save()
         return account
 
-
-class changepwSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Account
-        fields = ['user_id', 'password']
