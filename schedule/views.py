@@ -24,7 +24,7 @@ class ScheduleViewSet(ModelViewSet):
         start_time = data.get('startTime')
         end_time = data.get('endTime')
         remind = data.get('remind')
-        remind_time=remind.get('remindTime')
+        remind_time = remind.get('remindTime')
         is_notice = remind.get('isRemind')
         type_id = data.get('typeId')
         is_countdown = data.get('isCountdown')
@@ -50,9 +50,9 @@ class ScheduleViewSet(ModelViewSet):
                                                                     notice_time=i)
                 new_schedule_notice.save()
         except:
-            return Response({'Response': 'error'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'Response': False}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({'Response': 'success'}, status=status.HTTP_201_CREATED)
+        return Response({'Response': True}, status=status.HTTP_201_CREATED)
 
     # /schedule/edit/  -------------------------------------------------------------------------------------------------
     @action(detail=False, methods=['POST'])
@@ -67,7 +67,7 @@ class ScheduleViewSet(ModelViewSet):
             personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule,
                                                              user=Account.objects.get(user_id=uid))
         except:
-            return Response({'response': 'failed',
+            return Response({'response': False,
                              'message': '用戶沒有此行程'},
                             status=status.HTTP_404_NOT_FOUND
                             )
@@ -78,7 +78,7 @@ class ScheduleViewSet(ModelViewSet):
             for i in schedule_notice:
                 schedule_notice_list.append(str(i.notice_time))
         except:
-            schedule_notice_list=[]
+            schedule_notice_list = []
 
         title = data.get('title') if data.get('title') != schedule.schedule_name else None
         start_time = data.get('startTime') if data.get('startTime') != schedule.schedule_start else None
@@ -114,8 +114,8 @@ class ScheduleViewSet(ModelViewSet):
 
         if remind is not None:
             if is_remind is not None:
-                personal_schedule.is_notice=is_remind
-            if len(remind_time) >0:
+                personal_schedule.is_notice = is_remind
+            if len(remind_time) > 0:
                 update_remind()
 
         if type_id is not None:
@@ -132,4 +132,32 @@ class ScheduleViewSet(ModelViewSet):
 
         schedule.save()
 
-        return Response({'response': 'success'}, status=status.HTTP_200_OK)
+        return Response({'response': True}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['POST'])
+    def delete(self, request):
+        data = request.data
+        uid = data.get('uid')
+        schedule_no = data.get('scheduleNum')
+
+        try:
+            personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule_no, user_id=uid)
+            personal_schedule_no = personal_schedule.serial_no
+        except:
+            return Response({'response': False,
+                             'message': '用戶沒有此行程'},
+                            status=status.HTTP_404_NOT_FOUND
+                            )
+
+        try:
+            schedule_notice = ScheduleNotice.objects.filter(personal_schedule_no=personal_schedule_no)
+            schedule_notice.delete()
+        except:
+            pass
+
+        try:
+            personal_schedule.delete()
+        except:
+            return Response({'response': False}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({'response': True}, status=status.HTTP_200_OK)
