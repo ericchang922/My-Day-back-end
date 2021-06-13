@@ -38,7 +38,8 @@ import friend.views as friend_views
 import group.views as group_views
 # studyplan
 import studyplan.views as studyplan_views
-# from api.views import temporary_group as temporary_group_views
+# temporary_group
+import temporary_group.views as temporary_group_views
 
 #account
 import account.views as account_views
