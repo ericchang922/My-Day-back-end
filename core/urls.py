@@ -36,7 +36,8 @@ from rest_framework.routers import DefaultRouter
 import friend.views as friend_views
 # group
 import group.views as group_views
-# from api.views import studyplan as studyplan_views
+# studyplan
+import studyplan.views as studyplan_views
 # from api.views import temporary_group as temporary_group_views
 
 #account
