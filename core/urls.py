@@ -32,10 +32,11 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from api.views import friend as friend_views
-from api.views import group as group_views
-from api.views import studyplan as studyplan_views
-from api.views import temporary_group as temporary_group_views
+# friend
+import friend.views as friend_views
+# from api.views import group as group_views
+# from api.views import studyplan as studyplan_views
+# from api.views import temporary_group as temporary_group_views
 
 #account
 import account.views as account_views
