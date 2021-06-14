@@ -10,9 +10,9 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def save(self):
         account = Account(
-             user_id=self.validated_data['user_id'],
-             name=self.validated_data['name'],
-             password=self.validated_data['password'],
+            user_id=self.validated_data['user_id'],
+            name=self.validated_data['name'],
+            password=self.validated_data['password'],
         )
         account.save()
         return account
