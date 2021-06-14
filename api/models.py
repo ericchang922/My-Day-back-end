@@ -5,6 +5,7 @@
 #   * Make sure each ForeignKey and OneToOneField has `on_delete` set to the desired behavior
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
+import django
 from django.db import models
 from datetime import datetime
 
@@ -137,7 +138,7 @@ class Group(models.Model):
     group_name = models.CharField(max_length=255)
     founder = models.ForeignKey(Account, models.DO_NOTHING, db_column='founder')
     type = models.ForeignKey('Type', models.DO_NOTHING, blank=True, null=True)
-    found_time = models.DateTimeField(default=datetime.now())
+    found_time = models.DateTimeField(default=django.utils.timezone.now)
     is_temporary_group = models.IntegerField()
 
     class Meta:
@@ -196,7 +197,7 @@ class GroupLog(models.Model):
 class GroupMember(models.Model):
     group_no = models.OneToOneField(Group, models.DO_NOTHING, db_column='group_no', primary_key=True)
     user = models.ForeignKey(Account, models.DO_NOTHING)
-    join_time = models.DateTimeField(default=datetime.now())
+    join_time = models.DateTimeField(default=django.utils.timezone.now)
     status = models.ForeignKey('MemberStatus', models.DO_NOTHING)
     inviter = models.ForeignKey(Account, models.DO_NOTHING,related_name='inviter')
 
