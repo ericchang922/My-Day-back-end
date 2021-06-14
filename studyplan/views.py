@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from api.models import Group, StudyPlan, Schedule, PlanContent, \
-                        GetStudyplan, StudyplanList, GroupStudyplanList
+    GetStudyplan, StudyplanList, GroupStudyplanList, PersonalSchedule
 from studyplan.serializers import StudyPlanSerializer, CreateStudyPlanSerializer, ScheduleSerializer
 
 
@@ -178,8 +178,10 @@ class StudyPlanViewSet(ModelViewSet):
             scheduleNum = self.get_serializer(st).data['schedule_no']
             st.delete()
 
-            sc = Schedule.objects.get(pk=scheduleNum)
-            sc.delete()
+            pr = PersonalSchedule.objects.filter(schedule_no=scheduleNum)
+            if pr.count() == 0:
+                sc = Schedule.objects.get(pk=scheduleNum)
+                sc.delete()
 
             return Response({
                 'response': True,
