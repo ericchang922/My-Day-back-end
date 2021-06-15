@@ -25,7 +25,6 @@ class AccountViewSet(ModelViewSet):
             registered = Account.objects.filter(user_id=uid).count()
 
             if registered > 0:
-                print(registered)
                 return Response({'response': False, 'message': '此email已被使用'}, status=status.HTTP_226_IM_USED)
             else:
                 new_account = Account.objects.create(user_id=uid, name=name, password=password)
