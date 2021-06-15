@@ -1,10 +1,12 @@
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
-from api.models import Account
+from api.models import Schedule
 
 
-class RegisterSerializer(ModelSerializer):
+class ScheduleSerializer(ModelSerializer):
     class Meta:
-        model = Account
+        model = Schedule
         fields = '__all__'
+
+

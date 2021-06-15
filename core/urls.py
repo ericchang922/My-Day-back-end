@@ -32,12 +32,16 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from api.views import friend as friend_views
-from api.views import group as group_views
-from api.views import studyplan as studyplan_views
-from api.views import temporary_group as temporary_group_views
+# friend
+import friend.views as friend_views
+# group
+import group.views as group_views
+# studyplan
+import studyplan.views as studyplan_views
+# temporary_group
+import temporary_group.views as temporary_group_views
 
-#account
+# account
 import account.views as account_views
 # schedule
 from schedule import views as schedule_views
@@ -48,7 +52,7 @@ router.register('group', group_views.GroupViewSet)
 router.register('studyplan', studyplan_views.StudyPlanViewSet)
 router.register('temporary_group', temporary_group_views.TemporaryGroupViewSet)
 
-#account
+# account
 router.register('account', account_views.AccountViewSet)
 # schedule
 router.register('schedule', schedule_views.ScheduleViewSet)
