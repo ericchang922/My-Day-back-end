@@ -35,15 +35,18 @@ class GroupViewSet(ModelViewSet):
         GroupMember.objects.bulk_create(group_members)
 
         return Response({
-            'response': '成功'
+            'response': True,
+            'message': '成功'
         })
 
     @action(detail=False, methods=['PATCH'])
     def edit_group(self, request):
-        uid = request.query_params.get('uid')
-        groupNum = request.query_params.get('groupNum')
-        title = request.query_params.get('title')
-        typeId = request.query_params.get('typeId')
+        data = request.data
+
+        uid = data.get('uid')
+        groupNum = data.get('groupNum')
+        title = data.get('title')
+        typeId = data.get('typeId')
 
         grm = GroupMember.objects.filter(group_no=groupNum, user_id=uid, status_id__in=[1,4])
 
@@ -63,18 +66,22 @@ class GroupViewSet(ModelViewSet):
                                     trigger_type='U', do_type_id=1)
 
             return Response({
-                'response': '成功'
+                'response': True,
+                'message': '成功'
             })
         else:
             return Response({
-                'response': '失敗，您不屬於此群組'
+                'response': False,
+                'message': '失敗，您不屬於此群組'
             })
 
     @action(detail=False, methods=['POST'])
     def invite_friend(self, request):
-        uid = request.query_params.get('uid')
-        friendId = request.query_params.get('friendId')
-        groupNum = request.query_params.get('groupNum')
+        data = request.data
+
+        uid = data.get('uid')
+        friendId = data.get('friendId')
+        groupNum = data.get('groupNum')
         groupNum = Group.objects.get(pk=groupNum)
 
         inviter_status = GroupMember.objects.filter(group_no=groupNum, user_id=uid).first().status_id
@@ -82,46 +89,56 @@ class GroupViewSet(ModelViewSet):
             if inviter_status == 4:
                 GroupMember.objects.create(group_no=groupNum, user_id=friendId, status_id=2, inviter_id=uid)
                 return Response({
-                    'response': '成功'
+                    'response': True,
+                    'message': '成功'
                 })
             else:
                 return Response({
-                    'response': '您非管理者，無法邀請他人'
+                    'response': False,
+                    'message': '您非管理者，無法邀請他人'
                 })
         except IntegrityError:
             return Response({
-                'response': '已邀請過'
+                'response': False,
+                'message': '已邀請過'
             })
 
     @action(detail=False, methods=['PATCH'])
     def member_status(self, request):
-        uid = request.query_params.get('uid')
-        groupNum = request.query_params.get('groupNum')
-        statusId = int(request.query_params.get('statusId'))
+        data = request.data
+
+        uid = data.get('uid')
+        groupNum = data.get('groupNum')
+        statusId = int(data.get('statusId'))
         gr = GroupMember.objects.filter(group_no=groupNum, user_id=uid)
 
         if gr.count() > 0:
             if statusId == 1:
                 gr.update(status_id=statusId, join_time=datetime.now())
                 return Response({
-                    'response': '加入成功'
+                    'response': True,
+                    'message': '加入成功'
                 })
             elif statusId == 3:
                 gr.delete()
                 return Response({
-                    'response': '拒絕成功'
+                    'response': True,
+                    'message': '拒絕成功'
                 })
         else:
             groupNum = Group.objects.get(serial_no=groupNum)
             GroupMember.objects.create(group_no=groupNum, user_id=uid,
                                        status_id=1, join_time=datetime.now(), inviter_id=uid)
             return Response({
-                'response': '自行加入成功'
+                'response': True,
+                'message': '自行加入成功'
             })
 
     @action(detail=False)
     def group_list(self, request):
-        uid = request.query_params.get('uid')
+        data = request.data
+
+        uid = data.get('uid')
         gr = GroupList.objects.filter(user_id=uid, status_id__in=[1,4], is_temporary_group=0)
 
         if gr.count() > 0:
@@ -138,13 +155,16 @@ class GroupViewSet(ModelViewSet):
             })
         else:
             return Response({
-                'response': '沒有群組'
+                'response': False,
+                'message': '沒有群組'
             })
 
     @action(detail=False)
     def get(self, request):
-        uid = request.query_params.get('uid')
-        groupNum = request.query_params.get('groupNum')
+        data = request.data
+
+        uid = data.get('uid')
+        groupNum = data.get('groupNum')
         gr = GroupMember.objects.filter(user_id=uid, group_no=groupNum, status_id__in=[1,4])
 
         if gr.count() > 0:
@@ -170,13 +190,16 @@ class GroupViewSet(ModelViewSet):
                 })
         else:
             return Response({
-                'response': '您不屬於此群組'
+                'response': False,
+                'message': '您不屬於此群組'
             })
 
     @action(detail=False)
     def member_list(self, request):
-        uid = request.query_params.get('uid')
-        groupNum = request.query_params.get('groupNum')
+        data = request.data
+
+        uid = data.get('uid')
+        groupNum = data.get('groupNum')
         gr = GroupMember.objects.filter(user_id=uid, group_no=groupNum, status_id__in=[1, 4])
 
         if gr.count() > 0:
@@ -193,12 +216,15 @@ class GroupViewSet(ModelViewSet):
             })
         else:
             return Response({
-                'response': '您不屬於此群組'
+                'response': False,
+                'message': '您不屬於此群組'
             })
 
     @action(detail=False)
     def invite_list(self, request):
-        uid = request.query_params.get('uid')
+        data = request.data
+
+        uid = data.get('uid')
         gr = GroupInviteList.objects.filter(user_id=uid,status_id=2, is_temporary_group=0)
 
         if gr.count() > 0:
@@ -215,13 +241,16 @@ class GroupViewSet(ModelViewSet):
             })
         else:
             return Response({
-                'response': '沒有群組邀請'
+                'response': False,
+                'message': '沒有群組邀請'
             })
 
     @action(detail=False, methods=['Delete'])
     def quit_group(self, request):
-        uid = request.query_params.get('uid')
-        groupNum = request.query_params.get('groupNum')
+        data = request.data
+
+        uid = data.get('uid')
+        groupNum = data.get('groupNum')
 
         ugr = GroupMember.objects.filter(user_id=uid, group_no=groupNum)
         gr = GroupMember.objects.filter(group_no=groupNum, status_id=4)
@@ -230,35 +259,42 @@ class GroupViewSet(ModelViewSet):
         try:
             if ugr.first().status_id == 4 and gr.count() == 1 and grm.count() > 0:
                 return Response({
-                    'response': '您是唯一管理者，需先指定另一位管理者才能退出'
+                    'response': False,
+                    'message': '您是唯一管理者，需先指定另一位管理者才能退出'
                 })
             else:
                 ugr.delete()
                 return Response({
-                    'response': '退出成功'
+                    'response': True,
+                    'message': '退出成功'
                 })
         except AttributeError:
             return Response({
-                'response': '您已退出群組'
+                'response': False,
+                'message': '您已不是此群組的成員'
             })
 
     @action(detail=False, methods=['PATCH'])
     def setting_manager(self, request):
-        uid = request.query_params.get('uid')
-        friendId = request.query_params.get('friendId')
-        groupNum = request.query_params.get('groupNum')
-        statusId = request.query_params.get('statusId')
+        data = request.data
+
+        uid = data.get('uid')
+        friendId = data.get('friendId')
+        groupNum = data.get('groupNum')
+        statusId = data.get('statusId')
         ugr = GroupMember.objects.filter(user_id=uid, group_no=groupNum)
 
         if ugr.first().status_id != 4:
             return Response({
-                'response':'您非管理者無法指定他人為管理者'
+                'response': False,
+                'message': '您非管理者無法指定他人為管理者'
             })
         else:
             gr = GroupMember.objects.filter(user_id=friendId, group_no=groupNum)
             gr.update(status_id=4)
 
             return Response({
-                'response':'成功'
+                'response': True,
+                'message':'成功'
             })
 

@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from api.models import Group, StudyPlan, Schedule, PlanContent, \
-                        GetStudyplan, StudyplanList, GroupStudyplanList
+    GetStudyplan, StudyplanList, GroupStudyplanList, PersonalSchedule
 from studyplan.serializers import StudyPlanSerializer, CreateStudyPlanSerializer, ScheduleSerializer
 
 
@@ -44,7 +44,8 @@ class StudyPlanViewSet(ModelViewSet):
                 no = StudyPlan.objects.create(create_id=uid, schedule_no=no)
             else:
                 return Response({
-                    'response': '失敗，此行程非讀書計畫行程'
+                    'response': False,
+                    'message': '失敗，此行程非讀書計畫行程'
                 })
 
         for subject in subjects:
@@ -56,7 +57,8 @@ class StudyPlanViewSet(ModelViewSet):
         PlanContent.objects.bulk_create(subject_all)
 
         return Response({
-            'response': '成功'
+            'response': True,
+            'message': '成功'
         })
 
 
@@ -95,19 +97,23 @@ class StudyPlanViewSet(ModelViewSet):
             sc.save()
 
             return Response({
-                'response': '成功'
+                'response': True,
+                'message': '成功'
             })
         else:
             return Response({
-                'response': '您非此讀書計畫建立者，無法編輯'
+                'response': False,
+                'message': '您非此讀書計畫建立者，無法編輯'
             })
 
 
     @action(detail=False, methods=['PATCH'])
     def sharing(self, request):
-        uid = request.query_params.get('uid')
-        studyplanNum = request.query_params.get('studyplanNum')
-        groupNum = request.query_params.get('groupNum')
+        data = request.data
+
+        uid = data.get('uid')
+        studyplanNum = data.get('studyplanNum')
+        groupNum = data.get('groupNum')
 
         st = StudyPlan.objects.filter(create_id=uid, serial_no=studyplanNum)
         if st.count() > 0:
@@ -120,18 +126,22 @@ class StudyPlanViewSet(ModelViewSet):
             sc.save()
 
             return Response({
-                'response': '成功'
+                'response': True,
+                'message': '成功'
             })
         else:
             return Response({
-                'response': '您非此讀書計畫建立者，無法分享'
+                'response': False,
+                'message': '您非此讀書計畫建立者，無法分享'
             })
 
 
     @action(detail=False, methods=['PATCH'])
     def cancel_sharing(self, request):
-        uid = request.query_params.get('uid')
-        studyplanNum = request.query_params.get('studyplanNum')
+        data = request.data
+
+        uid = data.get('uid')
+        studyplanNum = data.get('studyplanNum')
 
         st = StudyPlan.objects.filter(create_id=uid, serial_no=studyplanNum)
         if st.count() > 0:
@@ -143,17 +153,21 @@ class StudyPlanViewSet(ModelViewSet):
             sc.save()
 
             return Response({
-                'response': '成功'
+                'response': True,
+                'message': '成功'
             })
         else:
             return Response({
-                'response': '您非此讀書計畫建立者，無法取消分享'
+                'response': False,
+                'message': '您非此讀書計畫建立者，無法取消分享'
             })
 
     @action(detail=False, methods=['DELETE'])
     def delete(self, request):
-        uid = request.query_params.get('uid')
-        studyplanNum = request.query_params.get('studyplanNum')
+        data = request.data
+
+        uid = data.get('uid')
+        studyplanNum = data.get('studyplanNum')
 
         st = StudyPlan.objects.filter(create_id=uid, serial_no=studyplanNum)
         if st.count() > 0:
@@ -164,21 +178,27 @@ class StudyPlanViewSet(ModelViewSet):
             scheduleNum = self.get_serializer(st).data['schedule_no']
             st.delete()
 
-            sc = Schedule.objects.get(pk=scheduleNum)
-            sc.delete()
+            pr = PersonalSchedule.objects.filter(schedule_no=scheduleNum)
+            if pr.count() == 0:
+                sc = Schedule.objects.get(pk=scheduleNum)
+                sc.delete()
 
             return Response({
-                'response': '成功'
+                'response': True,
+                'message': '成功'
             })
         else:
             return Response({
-                'response': '您非此讀書計畫建立者，無法刪除'
+                'response': False,
+                'message': '您非此讀書計畫建立者，無法刪除'
             })
 
     @action(detail=False)
     def get(self, request):
-        uid = request.query_params.get('uid')
-        studyplanNum = request.query_params.get('studyplanNum')
+        data = request.data
+
+        uid = data.get('uid')
+        studyplanNum = data.get('studyplanNum')
         st = GetStudyplan.objects.filter(create_id=uid, plan_no=studyplanNum)
 
         if st.count() > 0:
@@ -199,13 +219,16 @@ class StudyPlanViewSet(ModelViewSet):
             })
         else:
             return Response({
-                'response': '沒有讀書計畫'
+                'response': False,
+                'message': '沒有讀書計畫'
             })
 
 
     @action(detail=False)
     def personal_list(self, request):
-        uid = request.query_params.get('uid')
+        data = request.data
+
+        uid = data.get('uid')
         st = StudyplanList.objects.filter(create_id=uid)
 
         if st.count() > 0:
@@ -223,12 +246,15 @@ class StudyPlanViewSet(ModelViewSet):
             })
         else:
             return Response({
-                'response': '沒有個人讀書計畫'
+                'response': False,
+                'message': '沒有個人讀書計畫'
             })
 
     @action(detail=False)
     def group_list(self, request):
-        uid = request.query_params.get('uid')
+        data = request.data
+
+        uid = data.get('uid')
         st = GroupStudyplanList.objects.filter(user_id=uid)
 
         if st.count() > 0:
@@ -246,13 +272,16 @@ class StudyPlanViewSet(ModelViewSet):
             })
         else:
             return Response({
-                'response': '沒有群組讀書計畫'
+                'response': False,
+                'message': '沒有群組讀書計畫'
             })
 
     @action(detail=False)
     def one_group_list(self, request):
-        uid = request.query_params.get('uid')
-        groupNum = request.query_params.get('groupNum')
+        data = request.data
+
+        uid = data.get('uid')
+        groupNum = data.get('groupNum')
         st = GroupStudyplanList.objects.filter(user_id=uid,group_no=groupNum,status_id__in=[1,4])
 
         if st.count() > 0:
@@ -270,5 +299,6 @@ class StudyPlanViewSet(ModelViewSet):
             })
         else:
             return Response({
-                'response': '查無結果'
+                'response': False,
+                'message': '查無結果'
             })

@@ -15,12 +15,14 @@ class TemporaryGroupViewSet(ModelViewSet):
 
     @action(detail=False, methods=['POST'])
     def create_schedule(self, request):
-        uid = request.query_params.get('uid')
-        group_no = request.query_params.get('group_no')
-        title = request.query_params.get('title')
-        startTime = request.query_params.get('startTime')
-        endTime = request.query_params.get('endTime')
-        typeId = request.query_params.get('typeId')
+        data = request.data
+
+        uid = data.get('uid')
+        group_no = data.get('group_no')
+        title = data.get('title')
+        startTime = data.get('startTime')
+        endTime = data.get('endTime')
+        typeId = data.get('typeId')
 
         group_no = Group.objects.get(pk=group_no)
 
@@ -29,13 +31,16 @@ class TemporaryGroupViewSet(ModelViewSet):
                                 type_id=typeId)
 
         return Response({
-            'response': '成功'
+            'response': True,
+            'message': '成功'
         })
 
 
     @action(detail=False)
     def temporary_list(self, request):
-        uid = request.query_params.get('uid')
+        data = request.data
+
+        uid = data.get('uid')
         tg = TemporaryList.objects.filter(user_id=uid,status_id__in=[1,4],
                                           is_temporary_group=1, endtime__gte=datetime.now())
 
@@ -55,12 +60,15 @@ class TemporaryGroupViewSet(ModelViewSet):
             })
         else:
             return Response({
-                'response': '沒有玩聚'
+                'response': False,
+                'message': '沒有玩聚'
             })
 
     @action(detail=False)
     def invite_list(self, request):
-        uid = request.query_params.get('uid')
+        data = request.data
+
+        uid = data.get('uid')
         tg = TemporaryList.objects.filter(user_id=uid, status_id=2,
                                           is_temporary_group=1, endtime__gte=datetime.now())
 
@@ -80,13 +88,16 @@ class TemporaryGroupViewSet(ModelViewSet):
             })
         else:
             return Response({
-                'response': '沒有玩聚邀請'
+                'response': False,
+                'message': '沒有玩聚邀請'
             })
 
     @action(detail=False)
     def get(self, request):
-        uid = request.query_params.get('uid')
-        groupNum = request.query_params.get('groupNum')
+        data = request.data
+
+        uid = data.get('uid')
+        groupNum = data.get('groupNum')
 
         gr = GroupMember.objects.filter(user_id=uid, group_no=groupNum, status_id__in=[1, 4])
         if gr.count() > 0:
@@ -112,12 +123,15 @@ class TemporaryGroupViewSet(ModelViewSet):
                 })
         else:
             return Response({
-                'response': '您不屬於此群組'
+                'response': False,
+                'message': '您不屬於此群組'
             })
 
     @action(detail=False)
     def get_invite(self, request):
-        groupNum = request.query_params.get('groupNum')
+        data = request.data
+
+        groupNum = data.get('groupNum')
         tg = GetTemporaryInvite.objects.filter(group_no=groupNum)
 
         if tg.count() > 0:
@@ -136,5 +150,6 @@ class TemporaryGroupViewSet(ModelViewSet):
             })
         else:
             return Response({
-                'response': '沒有此玩聚邀請'
+                'response': False,
+                'message': '沒有此玩聚邀請'
             })
