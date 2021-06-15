@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -14,15 +15,20 @@ class AccountViewSet(ModelViewSet):
 
     @action(detail=False, methods=['POST'])
     def register(self, request):
+        data = request.data
 
-        serializer = RegisterSerializer(data=request.data)
-        data = {}
-        if serializer.is_valid():
-            account = serializer.save()
-            data['uid'] = account.user_id
-            data['userName'] = account.name
-            data['password'] = account.password
-            data['response'] = '成功'
-        else:
-            data['response'] = '失敗，這個email已有人使用'
-        return Response(data)
+        uid = data.get('uid')
+        name = data.get('userName')
+        password = data.get('password')
+
+        try:
+            registered = Account.objects.filter(user_id=uid).count()
+
+            if registered > 0:
+                return Response({'response': False, 'message': '此email已被使用'}, status=status.HTTP_226_IM_USED)
+            else:
+                new_account = Account.objects.create(user_id=uid, name=name, password=password)
+                new_account.save()
+        except:
+            return Response({'response': False, 'message': '錯誤'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'Response': True, 'message': '成功'}, status=status.HTTP_201_CREATED)
