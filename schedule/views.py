@@ -61,8 +61,10 @@ class ScheduleViewSet(ModelViewSet):
 
         uid = data.get('uid')
         schedule_no = data.get('scheduleNum')
-
-        schedule = Schedule.objects.get(serial_no=schedule_no)
+        try:
+            schedule = Schedule.objects.get(serial_no=schedule_no)
+        except:
+            return Response({'request':False, 'message':'行程不存在'},status=status.HTTP_404_NOT_FOUND)
         try:
             personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule,
                                                              user=Account.objects.get(user_id=uid))
@@ -131,6 +133,7 @@ class ScheduleViewSet(ModelViewSet):
             personal_schedule.remark = remark
 
         schedule.save()
+        personal_schedule.save()
 
         return Response({'response': True}, status=status.HTTP_200_OK)
 
