@@ -4,7 +4,6 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from django.utils import timezone
 from schedule.serializers import ScheduleSerilizer
 from api.models import Schedule, ScheduleNotice, PersonalSchedule, Account, Type
 
@@ -64,7 +63,7 @@ class ScheduleViewSet(ModelViewSet):
         try:
             schedule = Schedule.objects.get(serial_no=schedule_no)
         except:
-            return Response({'request':False, 'message':'行程不存在'},status=status.HTTP_404_NOT_FOUND)
+            return Response({'request': False, 'message': '行程不存在'}, status=status.HTTP_404_NOT_FOUND)
         try:
             personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule,
                                                              user=Account.objects.get(user_id=uid))
@@ -137,6 +136,7 @@ class ScheduleViewSet(ModelViewSet):
 
         return Response({'response': True}, status=status.HTTP_200_OK)
 
+    # /schedule/delete/  -----------------------------------------------------------------------------------------------
     @action(detail=False, methods=['POST'])
     def delete(self, request):
         data = request.data
@@ -164,3 +164,43 @@ class ScheduleViewSet(ModelViewSet):
             return Response({'response': False}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({'response': True}, status=status.HTTP_200_OK)
+
+    # /schedule/get/  --------------------------------------------------------------------------------------------------
+    @action(detail=False)
+    def get(self, request):
+        data = request.query_params
+        uid = data.get('uid')
+        schedule_no = data.get('scheduleNum')
+
+        try:
+            schedule = Schedule.objects.get(serial_no=schedule_no)
+        except:
+            return Response({'response': False,
+                             'message': '行程不存在'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule, user=uid)
+        except:
+            return Response({'response': False,
+                             'message': '用戶沒有此行程'}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            schedule_notice = ScheduleNotice.objects.filter(personal_schedule_no=personal_schedule)
+            remind = []
+            for i in schedule_notice:
+                remind.append(str(i.notice_time))
+        except:
+            remind = []
+
+        return Response({
+            'title': schedule.schedule_name,
+            'startTime': str(schedule.schedule_start),
+            'endTime': str(schedule.schedule_end),
+            'remind': {
+                'isRemind': personal_schedule.is_notice,
+                'remindTime': remind
+            },
+            'typeId': schedule.type_id,
+            'isCountdown': personal_schedule.is_countdown,
+            'place': schedule.place,
+            'remark': personal_schedule.remark
+        }, status=status.HTTP_200_OK)
