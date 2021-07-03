@@ -5,7 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from schedule.serializers import ScheduleSerilizer
-from api.models import Schedule, ScheduleNotice, PersonalSchedule, Account, Type
+from api.models import Schedule, ScheduleNotice, PersonalSchedule, Account, Type, GroupMember
 
 
 # Create your views here.
@@ -68,10 +68,22 @@ class ScheduleViewSet(ModelViewSet):
             personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule,
                                                              user=Account.objects.get(user_id=uid))
         except:
-            return Response({'response': False,
-                             'message': '用戶沒有此行程'},
-                            status=status.HTTP_404_NOT_FOUND
-                            )
+            group_member = GroupMember.objects.filter(group_no=schedule.connect_group_no.serial_no, user_id=uid,
+                                                      status=1)
+
+            if len(group_member) <= 0:
+                group_member = GroupMember.objects.filter(group_no=schedule.connect_group_no.serial_no, user_id=uid,
+                                                          status=4)
+
+            if len(group_member) > 0:
+                personal_schedule = PersonalSchedule.objects.create(user=Account.objects.get(user_id=uid),
+                                                                    schedule_no=schedule, is_notice=False,
+                                                                    is_countdown=False, is_hidden=False)
+            else:
+                return Response({'response': False,
+                                 'message': '用戶沒有此行程'},
+                                status=status.HTTP_404_NOT_FOUND
+                                )
 
         try:
             schedule_notice = ScheduleNotice.objects.filter(personal_schedule_no=personal_schedule)
@@ -118,6 +130,8 @@ class ScheduleViewSet(ModelViewSet):
                 personal_schedule.is_notice = is_remind
             if len(remind_time) > 0:
                 update_remind()
+        else:
+            personal_schedule.is_notice = False
 
         if type_id is not None:
             schedule.type_id = type_id
@@ -247,3 +261,11 @@ class ScheduleViewSet(ModelViewSet):
         return Response({'schedule': schedule_list,
                          'response': True,
                          }, status=status.HTTP_200_OK)
+    # /schedule/create_common/  -------------------------------------------------------------------------------------------
+    # @action(detail=False, methods=['POST'])
+    # def create_common(self,request):
+
+    # /schedule/get_common/  -------------------------------------------------------------------------------------------
+    # /schedule/common_list/ -------------------------------------------------------------------------------------------
+    # /schedule/common_hidden/  ----------------------------------------------------------------------------------------
+    # /schedule/countdown_list/  ---------------------------------------------------------------------------------------
