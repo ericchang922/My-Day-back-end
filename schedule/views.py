@@ -140,6 +140,7 @@ class ScheduleViewSet(ModelViewSet):
     @action(detail=False, methods=['POST'])
     def delete(self, request):
         data = request.data
+
         uid = data.get('uid')
         schedule_no = data.get('scheduleNum')
 
@@ -169,6 +170,7 @@ class ScheduleViewSet(ModelViewSet):
     @action(detail=False)
     def get(self, request):
         data = request.query_params
+
         uid = data.get('uid')
         schedule_no = data.get('scheduleNum')
 
@@ -204,3 +206,44 @@ class ScheduleViewSet(ModelViewSet):
             'place': schedule.place,
             'remark': personal_schedule.remark
         }, status=status.HTTP_200_OK)
+
+    # /schedule/get_list/  ---------------------------------------------------------------------------------------------
+    @action(detail=False)
+    def get_list(self, request):
+        data = request.query_params
+
+        uid = data.get('uid')
+
+        try:
+            personal_schedule = PersonalSchedule.objects.filter(user=uid).all()
+        except:
+            return Response({'response': False,
+                             'message': '用戶沒有此行程'
+                             }, status=status.HTTP_404_NOT_FOUND)
+
+        if len(personal_schedule) == 0:
+            return Response({'response': False,
+                             'message': '用戶沒有行程'
+                             }, status=status.HTTP_404_NOT_FOUND)
+        schedule_list = []
+
+        try:
+            for i in personal_schedule:
+                schedule = Schedule.objects.get(serial_no=i.schedule_no.serial_no)
+                schedule_list.append(
+                    {
+                        'scheduleNum': schedule.serial_no,
+                        'title': schedule.schedule_name,
+                        'startTime': schedule.schedule_start,
+                        'endTime': schedule.schedule_end,
+                        'typeId': schedule.type_id
+                    }
+                )
+        except:
+            return Response({'response': False,
+                             'message': '行程不存在'
+                             }, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({'schedule': schedule_list,
+                         'response': True,
+                         }, status=status.HTTP_200_OK)
