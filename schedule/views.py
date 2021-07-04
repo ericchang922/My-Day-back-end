@@ -1,14 +1,14 @@
 from django.shortcuts import render
+# rest
 from rest_framework.viewsets import ModelViewSet
-from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.response import Response
-
+# my day
 from schedule.serializers import ScheduleSerilizer
-from api.models import Schedule, ScheduleNotice, PersonalSchedule, Account, Type, GroupMember
+from api.models import Schedule, ScheduleNotice, PersonalSchedule, Account, Type, GroupMember, Group
+# schedule
+from schedule.resopnse import *
 
 
-# Create your views here.
 class ScheduleViewSet(ModelViewSet):
     queryset = Schedule.objects.all()
     serializer_class = ScheduleSerilizer
@@ -30,15 +30,14 @@ class ScheduleViewSet(ModelViewSet):
         place = data.get('place')
         remark = data.get('remark')
 
-        type = Type.objects.get(type_id=type_id)
         try:
-            new_schedule = Schedule.objects.create(schedule_name=title, type=type, schedule_start=start_time,
+            new_schedule = Schedule.objects.create(schedule_name=title, type_id=type_id, schedule_start=start_time,
                                                    schedule_end=end_time, place=place)
             new_schedule.save()
 
             schedule_no = Schedule.objects.get(serial_no=new_schedule.serial_no)
-            user_id = Account.objects.get(user_id=uid)
-            new_personal_schedule = PersonalSchedule.objects.create(user=user_id, schedule_no=schedule_no,
+
+            new_personal_schedule = PersonalSchedule.objects.create(user_id=uid, schedule_no=schedule_no,
                                                                     is_notice=is_notice, is_countdown=is_countdown,
                                                                     is_hidden=False, remark=remark)
             new_personal_schedule.save()
@@ -49,9 +48,9 @@ class ScheduleViewSet(ModelViewSet):
                                                                     notice_time=i)
                 new_schedule_notice.save()
         except:
-            return Response({'Response': False}, status=status.HTTP_400_BAD_REQUEST)
+            return err()
 
-        return Response({'Response': True}, status=status.HTTP_201_CREATED)
+        return success()
 
     # /schedule/edit/  -------------------------------------------------------------------------------------------------
     @action(detail=False, methods=['POST'])
@@ -63,7 +62,7 @@ class ScheduleViewSet(ModelViewSet):
         try:
             schedule = Schedule.objects.get(serial_no=schedule_no)
         except:
-            return Response({'request': False, 'message': '行程不存在'}, status=status.HTTP_404_NOT_FOUND)
+            return schedule_not_found()
         try:
             personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule,
                                                              user=Account.objects.get(user_id=uid))
@@ -80,10 +79,7 @@ class ScheduleViewSet(ModelViewSet):
                                                                     schedule_no=schedule, is_notice=False,
                                                                     is_countdown=False, is_hidden=False)
             else:
-                return Response({'response': False,
-                                 'message': '用戶沒有此行程'},
-                                status=status.HTTP_404_NOT_FOUND
-                                )
+                return personal_schedule_not_found()
 
         try:
             schedule_notice = ScheduleNotice.objects.filter(personal_schedule_no=personal_schedule)
@@ -148,7 +144,7 @@ class ScheduleViewSet(ModelViewSet):
         schedule.save()
         personal_schedule.save()
 
-        return Response({'response': True}, status=status.HTTP_200_OK)
+        return success()
 
     # /schedule/delete/  -----------------------------------------------------------------------------------------------
     @action(detail=False, methods=['POST'])
@@ -162,10 +158,7 @@ class ScheduleViewSet(ModelViewSet):
             personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule_no, user_id=uid)
             personal_schedule_no = personal_schedule.serial_no
         except:
-            return Response({'response': False,
-                             'message': '用戶沒有此行程'},
-                            status=status.HTTP_404_NOT_FOUND
-                            )
+            return personal_schedule_not_found()
 
         try:
             schedule_notice = ScheduleNotice.objects.filter(personal_schedule_no=personal_schedule_no)
@@ -176,9 +169,9 @@ class ScheduleViewSet(ModelViewSet):
         try:
             personal_schedule.delete()
         except:
-            return Response({'response': False}, status=status.HTTP_400_BAD_REQUEST)
+            return err()
 
-        return Response({'response': True}, status=status.HTTP_200_OK)
+        return success()
 
     # /schedule/get/  --------------------------------------------------------------------------------------------------
     @action(detail=False)
@@ -191,14 +184,12 @@ class ScheduleViewSet(ModelViewSet):
         try:
             schedule = Schedule.objects.get(serial_no=schedule_no)
         except:
-            return Response({'response': False,
-                             'message': '行程不存在'}, status=status.HTTP_404_NOT_FOUND)
+            return schedule_not_found()
 
         try:
             personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule, user=uid)
         except:
-            return Response({'response': False,
-                             'message': '用戶沒有此行程'}, status=status.HTTP_404_NOT_FOUND)
+            return personal_schedule_not_found()
         try:
             schedule_notice = ScheduleNotice.objects.filter(personal_schedule_no=personal_schedule)
             remind = []
@@ -207,19 +198,18 @@ class ScheduleViewSet(ModelViewSet):
         except:
             remind = []
 
-        return Response({
-            'title': schedule.schedule_name,
-            'startTime': str(schedule.schedule_start),
-            'endTime': str(schedule.schedule_end),
-            'remind': {
-                'isRemind': personal_schedule.is_notice,
-                'remindTime': remind
-            },
-            'typeId': schedule.type_id,
-            'isCountdown': personal_schedule.is_countdown,
-            'place': schedule.place,
-            'remark': personal_schedule.remark
-        }, status=status.HTTP_200_OK)
+        response = {'title': schedule.schedule_name,
+                    'startTime': str(schedule.schedule_start),
+                    'endTime': str(schedule.schedule_end),
+                    'remind': {
+                        'isRemind': personal_schedule.is_notice,
+                        'remindTime': remind
+                    },
+                    'typeId': schedule.type_id,
+                    'isCountdown': personal_schedule.is_countdown,
+                    'place': schedule.place,
+                    'remark': personal_schedule.remark}
+        return success(response)
 
     # /schedule/get_list/  ---------------------------------------------------------------------------------------------
     @action(detail=False)
@@ -231,16 +221,12 @@ class ScheduleViewSet(ModelViewSet):
         try:
             personal_schedule = PersonalSchedule.objects.filter(user=uid).all()
         except:
-            return Response({'response': False,
-                             'message': '用戶沒有此行程'
-                             }, status=status.HTTP_404_NOT_FOUND)
+            return err()
 
         if len(personal_schedule) == 0:
-            return Response({'response': False,
-                             'message': '用戶沒有行程'
-                             }, status=status.HTTP_404_NOT_FOUND)
-        schedule_list = []
+            return no_personal_schedule()
 
+        schedule_list = []
         try:
             for i in personal_schedule:
                 schedule = Schedule.objects.get(serial_no=i.schedule_no.serial_no)
