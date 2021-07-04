@@ -240,18 +240,93 @@ class ScheduleViewSet(ModelViewSet):
                     }
                 )
         except:
-            return Response({'response': False,
-                             'message': '行程不存在'
-                             }, status=status.HTTP_404_NOT_FOUND)
+            return schedule_not_found()
 
-        return Response({'schedule': schedule_list,
-                         'response': True,
-                         }, status=status.HTTP_200_OK)
-    # /schedule/create_common/  -------------------------------------------------------------------------------------------
-    # @action(detail=False, methods=['POST'])
-    # def create_common(self,request):
+        response = {'schedule': schedule_list}
+        return success(response)
+
+    # /schedule/create_common/  ----------------------------------------------------------------------------------------
+    @action(detail=False, methods=['POST'])
+    def create_common(self, request):
+        data = request.data
+
+        uid = data.get('uid')
+        group_no = data.get('groupNum')
+        title = data.get('title')
+        start_time = data.get('startTime')
+        end_time = data.get('endTime')
+        type_id = data.get('typeId')
+        place = data.get('place')
+
+        group = Group.objects.get(serial_no=group_no)
+        is_group_member = GroupMember.objects.filter(group_no=group, user=uid, status=1)
+        is_group_manager = GroupMember.objects.filter(group_no=group, user=uid, status=4)
+
+        if len(is_group_member) <= 0 and len(is_group_manager) <= 0:
+            return not_in_group()
+
+        schedule = Schedule.objects.create(schedule_name=title, connect_group_no=group, type_id=type_id,
+                                           schedule_start=start_time, schedule_end=end_time, place=place)
+        schedule.save()
+
+        try:
+            group_member = GroupMember.objects.filter(group_no=group_no, status=1)
+            group_manager = GroupMember.objects.filter(group_no=group_no, status=4)
+        except:
+            return err()
+
+        def create_personal(obj):
+            try:
+                personal_schedule = PersonalSchedule.objects.create(user=i.user, schedule_no=schedule, is_notice=False,
+                                                                    is_countdown=False, is_hidden=False)
+                personal_schedule.save()
+            except:
+                return err()
+
+        for i in group_member:
+            create_personal(i)
+        for i in group_manager:
+            create_personal(i)
+
+        return success()
 
     # /schedule/get_common/  -------------------------------------------------------------------------------------------
+    @action(detail=False)
+    def get_common(self, request):
+        data = request.query_params
+
+        uid = data.get('uid')
+        schedule_no = data.get('scheduleNum')
+
+        try:
+            schedule = Schedule.objects.get(serial_no=schedule_no)
+        except:
+            return schedule_not_found()
+
+        try:
+            personal_schedule = PersonalSchedule.objects.filter(schedule_no=schedule, user=uid)
+            if len(personal_schedule) <= 0:
+                return personal_schedule_not_found()
+
+            if schedule.connect_group_no is None:
+                return common_not_found()
+
+            # 此功能是在有人建立共同行程後成員會收到通知時使用的，因此要驗證是否在群組內
+            group_member = GroupMember.objects.filter(user=uid, group_no=schedule.connect_group_no)
+            if len(group_member) <= 0:
+                return not_in_group()
+        except:
+            return err()
+
+        respoonse = {
+            'title': schedule.schedule_name,
+            'startTime': schedule.schedule_start,
+            'endTime': schedule.schedule_end,
+            'typeName': schedule.type.type_name,
+            'place': schedule.place
+        }
+        return success(respoonse)
+
     # /schedule/common_list/ -------------------------------------------------------------------------------------------
     # /schedule/common_hidden/  ----------------------------------------------------------------------------------------
     # /schedule/countdown_list/  ---------------------------------------------------------------------------------------
