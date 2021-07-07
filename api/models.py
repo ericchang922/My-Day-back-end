@@ -164,13 +164,14 @@ class GroupInviteList(models.Model):
 class GroupList(models.Model):
     group_no = models.IntegerField()
     group_name = models.CharField(max_length=255)
+    member_photo = models.TextField(blank=True, null=True)
     user_id = models.CharField(max_length=255)
     name = models.CharField(max_length=255, blank=True, null=True)
     type_id = models.IntegerField(blank=True, null=True)
     status_id = models.IntegerField()
     founder = models.CharField(max_length=255,primary_key=True)
-    foundername = models.CharField(db_column='founderName', max_length=255, blank=True,
-                                   null=True)  # Field name made lowercase.
+    founder_name = models.CharField(max_length=255, db_collation='utf8_general_ci', blank=True, null=True)
+    founder_photo = models.TextField(blank=True, null=True)
     cnt = models.BigIntegerField()
     is_temporary_group = models.IntegerField()
     member = []
