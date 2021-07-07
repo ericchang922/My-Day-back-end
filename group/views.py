@@ -207,9 +207,11 @@ class GroupViewSet(ModelViewSet):
         if gr.count() > 0:
             gr = GroupList.objects.filter(group_no=groupNum)
             return Response({
-                'founderName': gr.first().foundername,
+                'founderPhoto': base64.b64encode(gr.first().founder_photo),
+                'founderName': gr.first().founder_name,
                 'member': [
                     {
+                        'memberPhoto': base64.b64encode(g.member_photo),
                         'memberName': g.name,
                         'statusId': g.status_id,
                     }
