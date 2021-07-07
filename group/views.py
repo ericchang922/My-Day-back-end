@@ -1,3 +1,5 @@
+import base64
+
 from django.db import IntegrityError
 from django.shortcuts import render
 from rest_framework import status
@@ -143,7 +145,7 @@ class GroupViewSet(ModelViewSet):
 
         if gr.count() > 0:
             return Response({
-                'list': [
+                'groupContent': [
                     {
                         'groupID': g.group_no,
                         'title': g.group_name,
@@ -234,7 +236,8 @@ class GroupViewSet(ModelViewSet):
                         'groupId': g.group_no,
                         'title': g.group_name,
                         'typeId': g.type_id,
-                        'inviteName': g.inviter_name,
+                        'inviterPhoto': base64.b64encode(g.inviter_photo),
+                        'inviterName': g.inviter_name,
                     }
                     for g in gr
                 ]
