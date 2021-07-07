@@ -1,3 +1,4 @@
+import base64
 from datetime import datetime
 
 from rest_framework.decorators import action
@@ -46,7 +47,7 @@ class TemporaryGroupViewSet(ModelViewSet):
 
         if tg.count() > 0:
             return Response({
-                'list': [
+                'temporaryContent': [
                     {
                         'groupId': g.group_no,
                         'typeId': g.type_id,
@@ -74,7 +75,7 @@ class TemporaryGroupViewSet(ModelViewSet):
 
         if tg.count() > 0:
             return Response({
-                'list': [
+                'temporaryContent': [
                     {
                         'groupId': g.group_no,
                         'typeId': g.type_id,
@@ -139,10 +140,12 @@ class TemporaryGroupViewSet(ModelViewSet):
                 'title': tg.first().group_name,
                 'startTime': tg.first().found_time,
                 'endTime': tg.first().schedule_end,
-                'founderName': tg.first().foundername,
+                'founderPhoto': base64.b64encode(tg.first().founder_photo),
+                'founderName': tg.first().founder_name,
                 'member': [
                     {
-                        'memberName': g.user_id,
+                        'memberPhoto': base64.b64encode(g.member_photo),
+                        'memberName': g.member_name,
                         'statusId': g.status_id,
                     }
                     for g in tg
