@@ -124,8 +124,11 @@ class GetTemporaryInvite(models.Model):
     group_name = models.CharField(max_length=255)
     found_time = models.DateTimeField()
     schedule_end = models.DateTimeField(blank=True, null=True)
-    foundername = models.CharField(db_column='founderName', max_length=255, blank=True, null=True)  # Field name made lowercase.
+    founder_photo = models.TextField(blank=True, null=True)
+    founder_name = models.CharField(max_length=255, db_collation='utf8_general_ci', blank=True, null=True)
+    member_photo = models.TextField(blank=True, null=True)
     user_id = models.CharField(max_length=255)
+    member_name = models.CharField(max_length=255, db_collation='utf8_general_ci', blank=True, null=True)
     status_id = models.IntegerField()
 
     class Meta:
