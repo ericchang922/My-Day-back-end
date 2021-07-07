@@ -152,6 +152,7 @@ class GroupInviteList(models.Model):
     type_id = models.IntegerField(blank=True, null=True)
     status_id = models.IntegerField()
     inviter_id = models.CharField(max_length=255)
+    inviter_photo = models.TextField(blank=True, null=True)
     inviter_name = models.CharField(max_length=255, blank=True, null=True)
     is_temporary_group = models.IntegerField()
 
