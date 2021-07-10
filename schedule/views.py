@@ -332,5 +332,77 @@ class ScheduleViewSet(ModelViewSet):
         return success(respoonse)
 
     # /schedule/common_list/ -------------------------------------------------------------------------------------------
+    @action(detail=False)
+    def common_list(self, request):
+        data = request.query_params
+
+        uid = data.get('uid')
+        group_no = data.get('groupNum')
+
+        group_member = GroupMember.objects.filter(user=uid, group_no=group_no)
+        if len(group_member) <= 0:
+            return not_in_group()
+
+        schedule = Schedule.objects.filter(connect_group_no=group_no)
+
+        list = []
+        for i in schedule:
+            list.append(
+                {
+                    'scheduleNum': i.serial_no,
+                    'title': i.schedule_name,
+                    'startTime': i.schedule_start,
+                    'endTime': i.schedule_end,
+                    'typeName': Type.objects.get(type_id=i.type_id).type_name
+                }
+            )
+
+        response = {'schedule': list}
+        return success(response)
+
     # /schedule/common_hidden/  ----------------------------------------------------------------------------------------
+    @action(detail=False, methods=['POST'])
+    def common_hidden(self, request):
+        data = request.data
+
+        uid = data.get('uid')
+        schedule_no = data.get('scheduleNum')
+        is_hidden = data.get('isHidden')
+
+        try:
+            personal_schedule = PersonalSchedule.objects.get(user=uid, schedule_no=schedule_no)
+            personal_schedule.is_hidden = is_hidden
+            personal_schedule.save()
+        except:
+            return no_personal_schedule()
+
+        return success()
+
     # /schedule/countdown_list/  ---------------------------------------------------------------------------------------
+    @action(detail=False)
+    def countdown_list(self, request):
+        data = request.query_params
+
+        uid = data.get('uid')
+
+        personal_schedule = PersonalSchedule.objects.filter(user=uid, is_countdown=True)
+        now = datetime.now()
+        list = []
+        for i in personal_schedule:
+            try:
+                schedule = Schedule.objects.get(serial_no=i.schedule_no.serial_no)
+            except:
+                err()
+            days = schedule.schedule_start - now
+            days = days.days
+            if days >= 0:
+                list.append(
+                    {
+                        'title': schedule.schedule_name,
+                        'countdownDate': days
+                        # 未滿24小時不算一天
+                    }
+                )
+
+        response = {'schedule': list}
+        return success(response)
