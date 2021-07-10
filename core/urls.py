@@ -45,6 +45,8 @@ import temporary_group.views as temporary_group_views
 import account.views as account_views
 # schedule
 from schedule import views as schedule_views
+#note
+from note import views as note_views
 
 router = DefaultRouter()
 router.register('friend', friend_views.FriendViewSet)
@@ -56,6 +58,8 @@ router.register('temporary_group', temporary_group_views.TemporaryGroupViewSet)
 router.register('account', account_views.AccountViewSet)
 # schedule
 router.register('schedule', schedule_views.ScheduleViewSet)
+# note
+router.register('note', note_views.NoteViewSet)
 
 
 urlpatterns = [
