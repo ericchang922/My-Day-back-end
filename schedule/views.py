@@ -345,9 +345,9 @@ class ScheduleViewSet(ModelViewSet):
 
         schedule = Schedule.objects.filter(connect_group_no=group_no)
 
-        list = []
+        schedule_list = []
         for i in schedule:
-            list.append(
+            schedule_list.append(
                 {
                     'scheduleNum': i.serial_no,
                     'title': i.schedule_name,
@@ -357,7 +357,7 @@ class ScheduleViewSet(ModelViewSet):
                 }
             )
 
-        response = {'schedule': list}
+        response = {'schedule': schedule_list}
         return success(response)
 
     # /schedule/common_hidden/  ----------------------------------------------------------------------------------------
@@ -387,7 +387,7 @@ class ScheduleViewSet(ModelViewSet):
 
         personal_schedule = PersonalSchedule.objects.filter(user=uid, is_countdown=True)
         now = datetime.now()
-        list = []
+        schedule_list = []
         for i in personal_schedule:
             try:
                 schedule = Schedule.objects.get(serial_no=i.schedule_no.serial_no)
@@ -396,7 +396,7 @@ class ScheduleViewSet(ModelViewSet):
             days = schedule.schedule_start - now
             days = days.days
             if days >= 0:
-                list.append(
+                schedule_list.append(
                     {
                         'title': schedule.schedule_name,
                         'countdownDate': days
@@ -404,5 +404,5 @@ class ScheduleViewSet(ModelViewSet):
                     }
                 )
 
-        response = {'schedule': list}
+        response = {'schedule': schedule_list}
         return success(response)
