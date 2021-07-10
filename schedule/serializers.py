@@ -3,6 +3,7 @@ from rest_framework.serializers import ModelSerializer
 
 from api.models import Schedule
 
+
 class ScheduleSerilizer(ModelSerializer):
     class Meta:
         model = Schedule

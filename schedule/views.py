@@ -1,4 +1,5 @@
-from django.shortcuts import render
+# python
+from datetime import datetime
 # rest
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
@@ -63,24 +64,27 @@ class ScheduleViewSet(ModelViewSet):
             schedule = Schedule.objects.get(serial_no=schedule_no)
         except:
             return schedule_not_found()
-        try:
-            personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule,
-                                                             user=Account.objects.get(user_id=uid))
-        except:
-            group_member = GroupMember.objects.filter(group_no=schedule.connect_group_no.serial_no, user_id=uid,
-                                                      status=1)
 
-            if len(group_member) <= 0:
+        personal_schedule = PersonalSchedule.objects.filter(schedule_no=schedule,
+                                                            user=Account.objects.get(user_id=uid))
+        if len(personal_schedule) <= 0:
+            if schedule.connect_group_no is None:
+                return personal_schedule_not_found()
+            else:
                 group_member = GroupMember.objects.filter(group_no=schedule.connect_group_no.serial_no, user_id=uid,
-                                                          status=4)
+                                                          status=1)
+                group_manager = GroupMember.objects.filter(group_no=schedule.connect_group_no.serial_no, user_id=uid,
+                                                           status=4)
 
-            if len(group_member) > 0:
+            if len(group_member) > 0 or len(group_manager) > 0:
                 personal_schedule = PersonalSchedule.objects.create(user=Account.objects.get(user_id=uid),
                                                                     schedule_no=schedule, is_notice=False,
                                                                     is_countdown=False, is_hidden=False)
             else:
                 return personal_schedule_not_found()
 
+        personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule,
+                                                         user=Account.objects.get(user_id=uid))
         try:
             schedule_notice = ScheduleNotice.objects.filter(personal_schedule_no=personal_schedule)
             schedule_notice_list = []
@@ -93,10 +97,10 @@ class ScheduleViewSet(ModelViewSet):
         start_time = data.get('startTime') if data.get('startTime') != schedule.schedule_start else None
         end_time = data.get('endTime') if data.get('endTime') != schedule.schedule_end else None
         remind = data.get('remind')
-        is_remind = remind.get('isRemind')
-        remind_time = remind.get('remindTime')
+        is_remind = remind.get('isRemind') if remind is not None else None
+        remind_time = remind.get('remindTime') if remind is not None else None
         type_id = data.get('typeId') if data.get('typeId') != schedule.type else None
-        is_countdown = data.get('isCountdwn') if data.get('isCountdwn') != personal_schedule.is_countdown else None
+        is_countdown = data.get('isCountdown') if data.get('isCountdown') != personal_schedule.is_countdown else None
         place = data.get('place') if data.get('place') != schedule.place else None
         remark = data.get('remark') if data.get('remark') != personal_schedule.remark else None
 
