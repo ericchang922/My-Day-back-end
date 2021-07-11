@@ -195,7 +195,7 @@ class StudyPlanViewSet(ModelViewSet):
 
     @action(detail=False)
     def get(self, request):
-        data = request.data
+        data = request.query_params
 
         uid = data.get('uid')
         studyplanNum = data.get('studyplanNum')
@@ -226,7 +226,7 @@ class StudyPlanViewSet(ModelViewSet):
 
     @action(detail=False)
     def personal_list(self, request):
-        data = request.data
+        data = request.query_params
 
         uid = data.get('uid')
         st = StudyplanList.objects.filter(create_id=uid)
@@ -252,7 +252,7 @@ class StudyPlanViewSet(ModelViewSet):
 
     @action(detail=False)
     def group_list(self, request):
-        data = request.data
+        data = request.query_params
 
         uid = data.get('uid')
         st = GroupStudyplanList.objects.filter(user_id=uid)
@@ -278,7 +278,7 @@ class StudyPlanViewSet(ModelViewSet):
 
     @action(detail=False)
     def one_group_list(self, request):
-        data = request.data
+        data = request.query_params
 
         uid = data.get('uid')
         groupNum = data.get('groupNum')
