@@ -39,7 +39,7 @@ class TemporaryGroupViewSet(ModelViewSet):
 
     @action(detail=False)
     def temporary_list(self, request):
-        data = request.data
+        data = request.query_params
 
         uid = data.get('uid')
         tg = TemporaryList.objects.filter(user_id=uid,status_id__in=[1,4],
@@ -67,7 +67,7 @@ class TemporaryGroupViewSet(ModelViewSet):
 
     @action(detail=False)
     def invite_list(self, request):
-        data = request.data
+        data = request.query_params
 
         uid = data.get('uid')
         tg = TemporaryList.objects.filter(user_id=uid, status_id=2,
@@ -95,7 +95,7 @@ class TemporaryGroupViewSet(ModelViewSet):
 
     @action(detail=False)
     def get(self, request):
-        data = request.data
+        data = request.query_params
 
         uid = data.get('uid')
         groupNum = data.get('groupNum')
@@ -130,7 +130,7 @@ class TemporaryGroupViewSet(ModelViewSet):
 
     @action(detail=False)
     def get_invite(self, request):
-        data = request.data
+        data = request.query_params
 
         groupNum = data.get('groupNum')
         tg = GetTemporaryInvite.objects.filter(group_no=groupNum)
