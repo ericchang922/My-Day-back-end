@@ -4,7 +4,7 @@ from datetime import datetime
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 # my day
-from schedule.serializers import ScheduleSerilizer
+from schedule.serializers import ScheduleSerializer
 from api.models import Schedule, ScheduleNotice, PersonalSchedule, Account, Type, GroupMember, Group
 # schedule
 from schedule.resopnse import *
@@ -12,7 +12,7 @@ from schedule.resopnse import *
 
 class ScheduleViewSet(ModelViewSet):
     queryset = Schedule.objects.all()
-    serializer_class = ScheduleSerilizer
+    serializer_class = ScheduleSerializer
 
     # /schedule/create_new/  -------------------------------------------------------------------------------------------
     @action(detail=False, methods=['POST'])
