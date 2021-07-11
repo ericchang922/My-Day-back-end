@@ -2,13 +2,20 @@ from rest_framework.response import Response
 from rest_framework import status
 
 
+class ErrMessage:
+    schedule_create = '建立行程錯誤'
+    personal_schedule_create = '建立個人行程錯誤'
+    remind_create = '建立提醒錯誤'
+    personal_schedule_select = '個人行程查詢錯誤'
+
+
 def success(response={}):
     response.update({'response': True})
     return Response(response, status=status.HTTP_200_OK)
 
 
-def err():
-    return Response({'response': False, 'message': '錯誤'}, status=status.HTTP_400_BAD_REQUEST)
+def err(message='錯誤'):
+    return Response({'response': False, 'message': message}, status=status.HTTP_400_BAD_REQUEST)
 
 
 def schedule_not_found():

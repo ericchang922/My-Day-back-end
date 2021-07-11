@@ -32,24 +32,21 @@ class ScheduleViewSet(ModelViewSet):
         remark = data.get('remark')
 
         try:
-            new_schedule = Schedule.objects.create(schedule_name=title, type_id=type_id, schedule_start=start_time,
-                                                   schedule_end=end_time, place=place)
-            new_schedule.save()
-
-            schedule_no = Schedule.objects.get(serial_no=new_schedule.serial_no)
-
-            new_personal_schedule = PersonalSchedule.objects.create(user_id=uid, schedule_no=schedule_no,
-                                                                    is_notice=is_notice, is_countdown=is_countdown,
-                                                                    is_hidden=False, remark=remark)
-            new_personal_schedule.save()
-            personal_schedule_no = PersonalSchedule.objects.get(serial_no=new_personal_schedule.serial_no)
-
-            for i in remind_time:
-                new_schedule_notice = ScheduleNotice.objects.create(personal_schedule_no=personal_schedule_no,
-                                                                    notice_time=i)
-                new_schedule_notice.save()
+            schedule = Schedule.objects.create(schedule_name=title, type_id=type_id, schedule_start=start_time,
+                                               schedule_end=end_time, place=place)
         except:
-            return err()
+            return err(ErrMessage.schedule_create)
+        try:
+            personal_schedule = PersonalSchedule.objects.create(user_id=uid, schedule_no=schedule, is_notice=is_notice,
+                                                                is_countdown=is_countdown, is_hidden=False,
+                                                                remark=remark)
+        except:
+            return err(ErrMessage.personal_schedule_select)
+        try:
+            for i in remind_time:
+                ScheduleNotice.objects.create(personal_schedule_no=personal_schedule, notice_time=i)
+        except:
+            return err(ErrMessage.remind_create)
 
         return success()
 
@@ -64,9 +61,12 @@ class ScheduleViewSet(ModelViewSet):
             schedule = Schedule.objects.get(serial_no=schedule_no)
         except:
             return schedule_not_found()
+        try:
+            personal_schedule = PersonalSchedule.objects.filter(schedule_no=schedule,
+                                                                user=Account.objects.get(user_id=uid))
+        except:
+            return err(ErrMessage.personal_schedule_select)
 
-        personal_schedule = PersonalSchedule.objects.filter(schedule_no=schedule,
-                                                            user=Account.objects.get(user_id=uid))
         if len(personal_schedule) <= 0:
             if schedule.connect_group_no is None:
                 return personal_schedule_not_found()
@@ -77,14 +77,17 @@ class ScheduleViewSet(ModelViewSet):
                                                            status=4)
 
             if len(group_member) > 0 or len(group_manager) > 0:
-                personal_schedule = PersonalSchedule.objects.create(user=Account.objects.get(user_id=uid),
-                                                                    schedule_no=schedule, is_notice=False,
-                                                                    is_countdown=False, is_hidden=False)
+                try:
+                    personal_schedule = PersonalSchedule.objects.create(user_id=uid, schedule_no=schedule,
+                                                                        is_notice=False, is_countdown=False,
+                                                                        is_hidden=False)
+                except:
+                    return err(ErrMessage.personal_schedule_select)
             else:
                 return personal_schedule_not_found()
 
         personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule,
-                                                         user=Account.objects.get(user_id=uid))
+                                                         user_id=uid)
         try:
             schedule_notice = ScheduleNotice.objects.filter(personal_schedule_no=personal_schedule)
             schedule_notice_list = []
