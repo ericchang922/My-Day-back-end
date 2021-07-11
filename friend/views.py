@@ -65,7 +65,7 @@ class FriendViewSet(ModelViewSet):
 
     @action(detail=False)
     def get(self, request):
-        data = request.data
+        data = request.query_params
 
         uid = data.get('uid')
         friendId = data.get('friendId')
@@ -83,9 +83,6 @@ class FriendViewSet(ModelViewSet):
             ptn = pt.values('timetable_no')[0]['timetable_no']
             if pl == 0 or (pl == 1 and plt == 0):
                 ptn = 0
-        else:
-            pass
-
 
         return Response({
             'photo': base64.b64encode(fr.first().photo),
@@ -95,7 +92,7 @@ class FriendViewSet(ModelViewSet):
 
     @action(detail=False)
     def friend_list(self, request):
-        data = request.data
+        data = request.query_params
 
         uid = data.get('uid')
         fr = FriendList.objects.filter(user_id=uid, relation_id=1)
@@ -120,7 +117,7 @@ class FriendViewSet(ModelViewSet):
 
     @action(detail=False)
     def best_list(self, request):
-        data = request.data
+        data = request.query_params
 
         uid = data.get('uid')
         fr = FriendList.objects.filter(user_id=uid, relation_id=2)
@@ -144,7 +141,7 @@ class FriendViewSet(ModelViewSet):
 
     @action(detail=False)
     def make_invite_list(self, request):
-        data = request.data
+        data = request.query_params
 
         uid = data.get('uid')
         fr = FriendList.objects.filter(user_id=uid, relation_id=4)
