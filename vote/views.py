@@ -1,14 +1,15 @@
 # python
 from datetime import datetime
+# django
+from django.core.exceptions import ValidationError
+from django.db.models import ObjectDoesNotExist
 # rest
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 # my day
-
 from vote.serializer import VoteSerializer
 from api.models import Vote, VoteOption, VoteDateOption, VoteRecord, GroupMember, Group, Account
-# vote
-from vote.response import *
+from api.response import *
 
 
 class VoteViewSet(ModelViewSet):
@@ -35,15 +36,15 @@ class VoteViewSet(ModelViewSet):
         try:
             group = Group.objects.get(serial_no=group_no)
         except:
-            return group_not_found()
+            return not_found(Msg.NotFound.group)
         try:
             group_member = GroupMember.objects.filter(user=uid, group_no=group_no, status=1)
             group_manager = GroupMember.objects.filter(user=uid, group_no=group_no, status=4)
         except:
-            return err(ErrMessage.group_member_read)
+            return err(Msg.Err.Group.member_read)
 
         if len(group_member) <= 0 and len(group_manager) <= 0:
-            return not_in_group()
+            return not_found(Msg.NotFound.not_in_group)
 
         try:
             vote = Vote.objects.create(group_no=group, option_type_id=option_type_id,
@@ -51,7 +52,7 @@ class VoteViewSet(ModelViewSet):
                                        found_time=datetime.now(), end_time=deadline, is_add_option=is_add_item_permit,
                                        is_anonymous=is_anonymous, multiple_choice=multiple_choice)
         except:
-            return err(ErrMessage.vote_create)
+            return err(Msg.Err.Vote.create)
 
         if option_type_id == 1:
             vote_option = VoteOption

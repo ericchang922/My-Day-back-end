@@ -1,13 +1,11 @@
-# python
-import base64
 # rest
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
-# myday
+# my day
 from note.serializer import NoteSerializer
 from api.models import Note, GroupMember, Group
 # note
-from note.response import *
+from api.response import *
 
 
 # Create your views here.
@@ -48,7 +46,7 @@ class NoteViewSet(ModelViewSet):
         try:
             note = Note.objects.get(serial_no=note_no)
         except:
-            return note_not_found()
+            return not_found(Msg.NotFound.note)
 
         if note.create_id != uid:
             try:
@@ -58,7 +56,7 @@ class NoteViewSet(ModelViewSet):
             if len(group_member) > 0:
                 return no_authority()
             else:
-                return user_note_not_found()
+                return not_found(Msg.NotFound.user_note)
 
         if note.type_name != type_name and type_name is not None:
             note.type_name = type_name
@@ -81,7 +79,7 @@ class NoteViewSet(ModelViewSet):
         try:
             note = Note.objects.get(serial_no=note_no)
         except:
-            return note_not_found()
+            return not_found(Msg.NotFound.note)
 
         if note.create_id != uid:
             try:
@@ -91,7 +89,7 @@ class NoteViewSet(ModelViewSet):
             if len(group_member) > 0:
                 return no_authority()
             else:
-                return user_note_not_found()
+                return not_found(Msg.NotFound.user_note)
         else:
             note.delete()
             return success()
@@ -107,7 +105,7 @@ class NoteViewSet(ModelViewSet):
         try:
             note = Note.objects.get(serial_no=note_no)
         except:
-            return note_not_found()
+            return not_found(Msg.NotFound.note)
 
         if note.create_id != uid:
             try:
@@ -116,7 +114,7 @@ class NoteViewSet(ModelViewSet):
             except:
                 return err()
             if len(group_member) <= 0 and len(group_manager) <= 0:
-                return user_note_not_found()
+                return not_found(Msg.NotFound.user_note)
 
         response = {
             'title': note.title,
@@ -162,7 +160,7 @@ class NoteViewSet(ModelViewSet):
         except:
             return err()
         if len(group_member) <= 0 and len(group_manager) <= 0:
-            return not_in_group()
+            return not_found(Msg.NotFound.not_in_group)
 
         try:
             note = Note.objects.filter(group_no=group_no)
@@ -193,15 +191,15 @@ class NoteViewSet(ModelViewSet):
         try:
             note = Note.objects.get(serial_no=note_no)
         except:
-            return note_not_found()
+            return not_found(Msg.NotFound.note)
 
         if note.create_id != uid:
-            return user_note_not_found()
+            return not_found(Msg.NotFound.user_note)
 
         try:
             group = Group.objects.get(serial_no=group_no)
         except:
-            return group_not_found()
+            return not_found(Msg.NotFound.group)
         try:
             group_member = GroupMember.objects.filter(user=uid, group_no=group, status=1)
             group_manager = GroupMember.objects.filter(user=uid, group_no=group, status=4)
@@ -209,7 +207,7 @@ class NoteViewSet(ModelViewSet):
             return err()
 
         if len(group_member) <= 0 and len(group_manager) <= 0:
-            return not_in_group()
+            return not_found(Msg.NotFound.not_in_group)
 
         note.group_no = group
         note.save()
@@ -226,7 +224,7 @@ class NoteViewSet(ModelViewSet):
         try:
             note = Note.objects.get(serial_no=note_no)
         except:
-            return note_not_found()
+            return not_found(Msg.NotFound.note)
 
         if note.create_id != uid:
             try:
@@ -235,10 +233,9 @@ class NoteViewSet(ModelViewSet):
             except:
                 return err()
             if len(group_member) > 0 or len(group_manager) > 0:
-                print(uid)
                 return no_authority()
             else:
-                return user_note_not_found()
+                return not_found(Msg.NotFound.user_note)
 
         note.group_no = None
         note.save()
