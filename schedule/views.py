@@ -1,5 +1,7 @@
 # python
 from datetime import datetime
+# django
+from django.db.models import ObjectDoesNotExist
 # rest
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
@@ -7,7 +9,7 @@ from rest_framework.decorators import action
 from schedule.serializers import ScheduleSerializer
 from api.models import Schedule, ScheduleNotice, PersonalSchedule, Account, Type, GroupMember, Group
 # schedule
-from schedule.resopnse import *
+from api.response import *
 
 
 class ScheduleViewSet(ModelViewSet):
@@ -35,18 +37,18 @@ class ScheduleViewSet(ModelViewSet):
             schedule = Schedule.objects.create(schedule_name=title, type_id=type_id, schedule_start=start_time,
                                                schedule_end=end_time, place=place)
         except:
-            return err(ErrMessage.schedule_create)
+            return err(Msg.Err.Schedule.create)
         try:
             personal_schedule = PersonalSchedule.objects.create(user_id=uid, schedule_no=schedule, is_notice=is_notice,
                                                                 is_countdown=is_countdown, is_hidden=False,
                                                                 remark=remark)
         except:
-            return err(ErrMessage.personal_schedule_select)
+            return err(Msg.Err.Schedule.personal_select)
         try:
             for i in remind_time:
                 ScheduleNotice.objects.create(personal_schedule_no=personal_schedule, notice_time=i)
         except:
-            return err(ErrMessage.remind_create)
+            return err(Msg.Err.Schedule.notice_create)
 
         return success()
 
@@ -59,22 +61,27 @@ class ScheduleViewSet(ModelViewSet):
         schedule_no = data.get('scheduleNum')
         try:
             schedule = Schedule.objects.get(serial_no=schedule_no)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.schedule)
         except:
-            return schedule_not_found()
+            return err(Msg.Err.Schedule.select)
         try:
             personal_schedule = PersonalSchedule.objects.filter(schedule_no=schedule,
                                                                 user=Account.objects.get(user_id=uid))
         except:
-            return err(ErrMessage.personal_schedule_select)
+            return err(Msg.Err.Schedule.personal_select)
 
         if len(personal_schedule) <= 0:
             if schedule.connect_group_no is None:
-                return personal_schedule_not_found()
+                return not_found(Msg.NotFound.personal_schedule)
             else:
-                group_member = GroupMember.objects.filter(group_no=schedule.connect_group_no.serial_no, user_id=uid,
-                                                          status=1)
-                group_manager = GroupMember.objects.filter(group_no=schedule.connect_group_no.serial_no, user_id=uid,
-                                                           status=4)
+                try:
+                    group_member = GroupMember.objects.filter(group_no=schedule.connect_group_no.serial_no, user_id=uid,
+                                                              status=1)
+                    group_manager = GroupMember.objects.filter(group_no=schedule.connect_group_no.serial_no, user_id=uid,
+                                                               status=4)
+                except:
+                    return err(Msg.Err.Group.member_read)
 
             if len(group_member) > 0 or len(group_manager) > 0:
                 try:
@@ -82,12 +89,17 @@ class ScheduleViewSet(ModelViewSet):
                                                                         is_notice=False, is_countdown=False,
                                                                         is_hidden=False)
                 except:
-                    return err(ErrMessage.personal_schedule_select)
+                    return err(Msg.Err.Schedule.personal_create)
             else:
-                return personal_schedule_not_found()
+                return not_found(Msg.NotFound.personal_schedule)
+        try:
+            personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule,
+                                                             user_id=uid)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.personal_schedule)
+        except:
+            return err(Msg.Err.Schedule.personal_select)
 
-        personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule,
-                                                         user_id=uid)
         try:
             schedule_notice = ScheduleNotice.objects.filter(personal_schedule_no=personal_schedule)
             schedule_notice_list = []
@@ -116,8 +128,13 @@ class ScheduleViewSet(ModelViewSet):
 
             for i in schedule_notice_list:
                 if i not in remind_time:
-                    del_notice = ScheduleNotice.objects.get(personal_schedule_no=personal_schedule, notice_time=i)
-                    del_notice.delete()
+                    try:
+                        del_notice = ScheduleNotice.objects.get(personal_schedule_no=personal_schedule, notice_time=i)
+                        del_notice.delete()
+                    except ObjectDoesNotExist:
+                        return not_found(Msg.NotFound.schedule_notice)
+                    except:
+                        return err(Msg.Err.Schedule.notice_delete)
 
         if title is not None:
             schedule.schedule_name = title
@@ -164,19 +181,21 @@ class ScheduleViewSet(ModelViewSet):
         try:
             personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule_no, user_id=uid)
             personal_schedule_no = personal_schedule.serial_no
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.personal_schedule)
         except:
-            return personal_schedule_not_found()
+            return err(Msg.Err.Schedule.personal_select)
 
         try:
             schedule_notice = ScheduleNotice.objects.filter(personal_schedule_no=personal_schedule_no)
             schedule_notice.delete()
         except:
-            pass
+            err(Msg.Err.Schedule.notice_delete)
 
         try:
             personal_schedule.delete()
         except:
-            return err()
+            return err(Msg.Err.Schedule.personal_delete)
 
         return success()
 
@@ -190,13 +209,18 @@ class ScheduleViewSet(ModelViewSet):
 
         try:
             schedule = Schedule.objects.get(serial_no=schedule_no)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.schedule)
         except:
-            return schedule_not_found()
+            return err(Msg.Err.Schedule.select)
 
         try:
             personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule, user=uid)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.personal_schedule)
         except:
-            return personal_schedule_not_found()
+            return err(Msg.Err.Schedule.personal_select)
+
         try:
             schedule_notice = ScheduleNotice.objects.filter(personal_schedule_no=personal_schedule)
             remind = []
@@ -228,10 +252,10 @@ class ScheduleViewSet(ModelViewSet):
         try:
             personal_schedule = PersonalSchedule.objects.filter(user=uid).all()
         except:
-            return err()
+            return err(Msg.Err.Schedule.personal_select)
 
         if len(personal_schedule) == 0:
-            return no_personal_schedule()
+            return not_found(Msg.NotFound.no_personal_schedule)
 
         schedule_list = []
         try:
@@ -246,8 +270,10 @@ class ScheduleViewSet(ModelViewSet):
                         'typeId': schedule.type_id
                     }
                 )
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.schedule)
         except:
-            return schedule_not_found()
+            return err(Msg.Err.Schedule.select)
 
         response = {'schedule': schedule_list}
         return success(response)
@@ -265,30 +291,40 @@ class ScheduleViewSet(ModelViewSet):
         type_id = data.get('typeId')
         place = data.get('place')
 
-        group = Group.objects.get(serial_no=group_no)
-        is_group_member = GroupMember.objects.filter(group_no=group, user=uid, status=1)
-        is_group_manager = GroupMember.objects.filter(group_no=group, user=uid, status=4)
+        try:
+            group = Group.objects.get(serial_no=group_no)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.group)
+        except:
+            return err(Msg.Err.Group.select)
+
+        try:
+            is_group_member = GroupMember.objects.filter(group_no=group, user=uid, status=1)
+            is_group_manager = GroupMember.objects.filter(group_no=group, user=uid, status=4)
+        except:
+            return err(Msg.Err.Group.member_read)
 
         if len(is_group_member) <= 0 and len(is_group_manager) <= 0:
-            return not_in_group()
+            return not_found(Msg.NotFound.not_in_group)
 
-        schedule = Schedule.objects.create(schedule_name=title, connect_group_no=group, type_id=type_id,
-                                           schedule_start=start_time, schedule_end=end_time, place=place)
-        schedule.save()
+        try:
+            schedule = Schedule.objects.create(schedule_name=title, connect_group_no=group, type_id=type_id,
+                                               schedule_start=start_time, schedule_end=end_time, place=place)
+        except:
+            return err(Msg.Err.Schedule.create)
 
         try:
             group_member = GroupMember.objects.filter(group_no=group_no, status=1)
             group_manager = GroupMember.objects.filter(group_no=group_no, status=4)
         except:
-            return err()
+            return err(Msg.Err.Group.member_read)
 
         def create_personal(obj):
             try:
-                personal_schedule = PersonalSchedule.objects.create(user=i.user, schedule_no=schedule, is_notice=False,
-                                                                    is_countdown=False, is_hidden=False)
-                personal_schedule.save()
+                PersonalSchedule.objects.create(user=i.user, schedule_no=schedule, is_notice=False,
+                                                is_countdown=False, is_hidden=False)
             except:
-                return err()
+                return err(Msg.Err.Schedule.personal_create)
 
         for i in group_member:
             create_personal(i)
@@ -307,32 +343,39 @@ class ScheduleViewSet(ModelViewSet):
 
         try:
             schedule = Schedule.objects.get(serial_no=schedule_no)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.schedule)
         except:
-            return schedule_not_found()
+            return err(Msg.Err.Schedule.select)
 
         try:
             personal_schedule = PersonalSchedule.objects.filter(schedule_no=schedule, user=uid)
-            if len(personal_schedule) <= 0:
-                return personal_schedule_not_found()
+        except:
+            return err(Msg.Err.Schedule.personal_select)
 
-            if schedule.connect_group_no is None:
-                return common_not_found()
+        if len(personal_schedule) <= 0:
+            return not_found(Msg.NotFound.personal_schedule)
 
+        if schedule.connect_group_no is None:
+            return not_found(Msg.NotFound.common_schedule)
+
+        try:
             # 此功能是在有人建立共同行程後成員會收到通知時使用的，因此要驗證是否在群組內
             group_member = GroupMember.objects.filter(user=uid, group_no=schedule.connect_group_no)
-            if len(group_member) <= 0:
-                return not_in_group()
         except:
-            return err()
+            return err(Msg.Err.Group.member_read)
 
-        respoonse = {
+        if len(group_member) <= 0:
+            return not_found(Msg.NotFound.not_in_group)
+
+        response = {
             'title': schedule.schedule_name,
             'startTime': schedule.schedule_start,
             'endTime': schedule.schedule_end,
             'typeName': schedule.type.type_name,
             'place': schedule.place
         }
-        return success(respoonse)
+        return success(response)
 
     # /schedule/common_list/ -------------------------------------------------------------------------------------------
     @action(detail=False)
@@ -342,11 +385,17 @@ class ScheduleViewSet(ModelViewSet):
         uid = data.get('uid')
         group_no = data.get('groupNum')
 
-        group_member = GroupMember.objects.filter(user=uid, group_no=group_no)
+        try:
+            group_member = GroupMember.objects.filter(user=uid, group_no=group_no)
+        except:
+            return err(Msg.Err.Group.member_read)
         if len(group_member) <= 0:
-            return not_in_group()
+            return not_found(Msg.NotFound.not_in_group)
 
-        schedule = Schedule.objects.filter(connect_group_no=group_no)
+        try:
+            schedule = Schedule.objects.filter(connect_group_no=group_no)
+        except:
+            return err(Msg.Err.Schedule.select)
 
         schedule_list = []
         for i in schedule:
@@ -376,8 +425,10 @@ class ScheduleViewSet(ModelViewSet):
             personal_schedule = PersonalSchedule.objects.get(user=uid, schedule_no=schedule_no)
             personal_schedule.is_hidden = is_hidden
             personal_schedule.save()
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.no_personal_schedule)
         except:
-            return no_personal_schedule()
+            return err(Msg.Err.Schedule.select)
 
         return success()
 
@@ -388,14 +439,21 @@ class ScheduleViewSet(ModelViewSet):
 
         uid = data.get('uid')
 
-        personal_schedule = PersonalSchedule.objects.filter(user=uid, is_countdown=True)
+        try:
+            personal_schedule = PersonalSchedule.objects.filter(user=uid, is_countdown=True)
+        except:
+            return err(Msg.Err.Schedule.personal_select)
+
         now = datetime.now()
         schedule_list = []
         for i in personal_schedule:
             try:
                 schedule = Schedule.objects.get(serial_no=i.schedule_no.serial_no)
+            except ObjectDoesNotExist:
+                return not_found(Msg.NotFound.schedule)
             except:
-                err()
+                return err(Msg.Err.Schedule.select)
+
             days = schedule.schedule_start - now
             days = days.days
             if days >= 0:
