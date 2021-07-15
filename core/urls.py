@@ -1,33 +1,3 @@
-"""core URL Configuration
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/3.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
-"""core URL Configuration
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/3.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
@@ -45,6 +15,10 @@ import temporary_group.views as temporary_group_views
 import account.views as account_views
 # schedule
 from schedule import views as schedule_views
+# note
+from note import views as note_views
+# vote
+from vote import views as vote_views
 # setting
 from setting import views as setting_views
 
@@ -58,6 +32,10 @@ router.register('temporary_group', temporary_group_views.TemporaryGroupViewSet)
 router.register('account', account_views.AccountViewSet)
 # schedule
 router.register('schedule', schedule_views.ScheduleViewSet)
+# note
+router.register('note', note_views.NoteViewSet)
+# vote
+router.register('vote', vote_views.VoteViewSet)
 # setting
 router.register('setting', setting_views.SettingViewSet)
 

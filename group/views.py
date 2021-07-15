@@ -138,7 +138,7 @@ class GroupViewSet(ModelViewSet):
 
     @action(detail=False)
     def group_list(self, request):
-        data = request.data
+        data = request.query_params
 
         uid = data.get('uid')
         gr = GroupList.objects.filter(user_id=uid, status_id__in=[1,4], is_temporary_group=0)
@@ -163,7 +163,7 @@ class GroupViewSet(ModelViewSet):
 
     @action(detail=False)
     def get(self, request):
-        data = request.data
+        data = request.query_params
 
         uid = data.get('uid')
         groupNum = data.get('groupNum')
@@ -198,7 +198,7 @@ class GroupViewSet(ModelViewSet):
 
     @action(detail=False)
     def member_list(self, request):
-        data = request.data
+        data = request.query_params
 
         uid = data.get('uid')
         groupNum = data.get('groupNum')
@@ -226,7 +226,7 @@ class GroupViewSet(ModelViewSet):
 
     @action(detail=False)
     def invite_list(self, request):
-        data = request.data
+        data = request.query_params
 
         uid = data.get('uid')
         gr = GroupInviteList.objects.filter(user_id=uid,status_id=2, is_temporary_group=0)

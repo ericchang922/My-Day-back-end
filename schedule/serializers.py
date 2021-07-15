@@ -3,7 +3,8 @@ from rest_framework.serializers import ModelSerializer
 
 from api.models import Schedule
 
-class ScheduleSerilizer(ModelSerializer):
+
+class ScheduleSerializer(ModelSerializer):
     class Meta:
         model = Schedule
         fields = '__all__'
