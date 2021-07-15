@@ -10,15 +10,15 @@ class StudyPlanSerializer(ModelSerializer):
         fields = '__all__'
 
 
-class StudyPlanForCreateGroupSerializer(serializers.Serializer):
-    subject = serializers.CharField()
-    plan_start = serializers.DateTimeField()
-    plan_end = serializers.DateTimeField()
-    is_rest = serializers.CharField()
+class StudyPlanContentSerializer(serializers.Serializer):
+    subject = serializers.CharField(required=True)
+    plan_start = serializers.DateTimeField(required=True)
+    plan_end = serializers.DateTimeField(required=True)
+    is_rest = serializers.CharField(required=True)
 
 
 class CreateStudyPlanSerializer(serializers.ModelSerializer):
-    subjects = StudyPlanForCreateGroupSerializer(many=True)
+    subjects = StudyPlanContentSerializer(many=True)
 
     class Meta:
         model = Schedule
