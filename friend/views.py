@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.shortcuts import render
 from rest_framework import status
@@ -24,13 +25,12 @@ class FriendViewSet(ModelViewSet):
 
         uid = data.get('uid')
         friendId = data.get('friendId')
-
-        user = Account.objects.get(pk=uid)
-        friend = Account.objects.get(pk=friendId)
-        invite = Relation.objects.get(pk=3)
-        be_invited = Relation.objects.get(pk=4)
-
         try:
+            user = Account.objects.get(pk=uid)
+            friend = Account.objects.get(pk=friendId)
+            invite = Relation.objects.get(pk=3)
+            be_invited = Relation.objects.get(pk=4)
+
             Friend.objects.create(user=user, related_person=friend, relation=invite)
             Friend.objects.create(user=friend, related_person=user, relation=be_invited)
 
@@ -43,6 +43,11 @@ class FriendViewSet(ModelViewSet):
                 'response': False,
                 'message': '已邀請過'
             })
+        except ObjectDoesNotExist:
+            return Response({
+                'response': False,
+                'message': '沒有這個人'
+            })
 
     @action(detail=False, methods=['PATCH'])
     def add_best(self, request):
@@ -51,16 +56,17 @@ class FriendViewSet(ModelViewSet):
         uid = data.get('uid')
         friendId = data.get('friendId')
 
-        fr = Friend.objects.filter(
-            user__user_id=uid,
-            related_person__user_id=friendId,
-        )
-        best_friend = Relation.objects.get(pk=2)
-        fr.update(relation=best_friend)
-
+        friend = Friend.objects.filter(user_id=uid, related_person=friendId, relation_id=1)
+        if friend.exists():
+            best_friend = Relation.objects.get(pk=2)
+            friend.update(relation=best_friend)
+            return Response({
+                'response': True,
+                'message': '成功'
+            })
         return Response({
-            'response': True,
-            'message': '成功'
+            'response': False,
+            'message': '對方非朋友'
         })
 
     @action(detail=False)
@@ -70,24 +76,29 @@ class FriendViewSet(ModelViewSet):
         uid = data.get('uid')
         friendId = data.get('friendId')
 
-        fr = GetFriend.objects.filter(user_id=uid, related_person=friendId)
-        pt = PersonalTimetable.objects.filter(user_id=friendId,
-                                              semester_start__lte=datetime.now(),
-                                              semester_end__gte=datetime.now())
+        friend = GetFriend.objects.filter(user_id=uid, related_person=friendId, relation_id__in=[1, 2])
+        if friend.exists():
+            personal_timetable = PersonalTimetable.objects.filter(user_id=friendId,
+                                                                  semester_start__lte=datetime.now(),
+                                                                  semester_end__gte=datetime.now())
 
-        pl = Account.objects.get(user_id=friendId).is_public
-        plt = Friend.objects.filter(user_id=friendId,related_person=uid).first().is_public_timetable
+            public = Account.objects.get(user_id=friendId).is_public
+            public_to_friend = Friend.objects.filter(user_id=friendId,related_person=uid).first().is_public_timetable
 
-        ptn = 0
-        if pt.count() > 0:
-            ptn = pt.values('timetable_no')[0]['timetable_no']
-            if pl == 0 or (pl == 1 and plt == 0):
-                ptn = 0
+            timetable_no = 0
+            if personal_timetable.exists():
+                timetable_no = personal_timetable.values('timetable_no')[0]['timetable_no']
+                if public == 0 or (public == 1 and public_to_friend == 0):
+                    timetable_no = 0
 
+            return Response({
+                'photo': base64.b64encode(friend.first().photo),
+                'friendName': friend.first().name,
+                'timetableId': timetable_no,
+            })
         return Response({
-            'photo': base64.b64encode(fr.first().photo),
-            'friendName': fr.first().name,
-            'timetableId': ptn,
+            'response': False,
+            'message': '沒有此好友'
         })
 
     @action(detail=False)
@@ -95,73 +106,55 @@ class FriendViewSet(ModelViewSet):
         data = request.query_params
 
         uid = data.get('uid')
-        fr = FriendList.objects.filter(user_id=uid, relation_id=1)
 
-        if fr.count() > 0:
-            return Response({
-                'friend': [
-                    {
-                        'photo': base64.b64encode(f.photo),
-                        'friendId': f.related_person,
-                        'friendName': f.name,
-                        'relationId': f.relation_id,
-                    }
-                    for f in fr
-                ]
-            })
-        else:
-            return Response({
-                'response': False,
-                'message': '尚未有朋友'
-            })
+        friend = FriendList.objects.filter(user_id=uid, relation_id=1)
+        return Response({
+            'friend': [
+                {
+                    'photo': base64.b64encode(f.photo),
+                    'friendId': f.related_person,
+                    'friendName': f.name,
+                    'relationId': f.relation_id,
+                }
+                for f in friend
+            ]
+        })
 
     @action(detail=False)
     def best_list(self, request):
         data = request.query_params
 
         uid = data.get('uid')
-        fr = FriendList.objects.filter(user_id=uid, relation_id=2)
 
-        if fr.count() > 0:
-            return Response({
-                'friend': [
-                    {
-                        'photo': base64.b64encode(f.photo),
-                        'friendId': f.related_person,
-                        'friendName': f.name,
-                    }
-                    for f in fr
-                ]
-            })
-        else:
-            return Response({
-                'response': False,
-                'message': '沒有摯友'
-            })
+        friend = FriendList.objects.filter(user_id=uid, relation_id=2)
+        return Response({
+            'friend': [
+                {
+                    'photo': base64.b64encode(f.photo),
+                    'friendId': f.related_person,
+                    'friendName': f.name,
+                }
+                for f in friend
+            ]
+        })
 
     @action(detail=False)
     def make_invite_list(self, request):
         data = request.query_params
 
         uid = data.get('uid')
-        fr = FriendList.objects.filter(user_id=uid, relation_id=4)
 
-        if fr.count() > 0:
-            return Response({
-                'friend': [
-                    {
-                        'photo': base64.b64encode(f.photo),
-                        'friendId': f.related_person,
-                        'friendName': f.name,
-                    }
-                    for f in fr
-                ]
-            })
-        else:
-            return Response({
-                'response': False,
-                'message': '沒有好友邀請'
-            })
+        friend = FriendList.objects.filter(user_id=uid, relation_id=4)
+        return Response({
+            'friend': [
+                {
+                    'photo': base64.b64encode(f.photo),
+                    'friendId': f.related_person,
+                    'friendName': f.name,
+                }
+                for f in friend
+            ]
+        })
 
     @action(detail=False, methods=['PATCH'])
     def add_reply(self, request):
@@ -171,23 +164,32 @@ class FriendViewSet(ModelViewSet):
         friendId = data.get('friendId')
         relationId = int(data.get('relationId'))
 
-        fr_u = Friend.objects.filter(user=uid, related_person=friendId)
-        fr_r = Friend.objects.filter(related_person=uid, user=friendId)
+        user_status = Friend.objects.filter(user=uid, related_person=friendId)
+        related_person_status = Friend.objects.filter(related_person=uid, user=friendId)
 
-        if relationId == 1:
-            fr_u.update(relation=1)
-            fr_r.update(relation=1)
+        if user_status.exists() and related_person_status.exists():
+            if relationId == 1:
+                user_status.update(relation=1)
+                related_person_status.update(relation=1)
+                return Response({
+                    'response': True,
+                    'message': '已接受邀請'
+                })
+            elif relationId == 5:
+                user_status.delete()
+                related_person_status.delete()
+                return Response({
+                    'response': True,
+                    'message': '拒絕成功'
+                })
             return Response({
-                'response': True,
-                'message': '已接受邀請'
+                'response': False,
+                'message': '關係編號錯誤'
             })
-        elif relationId == 5:
-            fr_u.delete()
-            fr_r.delete()
-            return Response({
-                'response': True,
-                'message': '拒絕成功'
-            })
+        return Response({
+            'response': False,
+            'message': '沒有好友邀請關係'
+        })
 
 
     @action(detail=False, methods=['DELETE'])
@@ -197,14 +199,18 @@ class FriendViewSet(ModelViewSet):
         uid = data.get('uid')
         friendId = data.get('friendId')
 
-        fr = Friend.objects.filter(user=uid, related_person=friendId)
-        fr.delete()
-        fr = Friend.objects.filter(related_person=uid, user=friendId)
-        fr.delete()
-
+        user_friendship = Friend.objects.filter(user=uid, related_person=friendId)
+        friend_friendship = Friend.objects.filter(related_person=uid, user=friendId)
+        if user_friendship.exists() and friend_friendship.exists():
+            user_friendship.delete()
+            friend_friendship.delete()
+            return Response({
+                'response': True,
+                'message': '刪除成功'
+            })
         return Response({
-            'response': True,
-            'message': '刪除成功'
+            'response': False,
+            'message': '沒有好友關係'
         })
 
     @action(detail=False, methods=['PATCH'])
@@ -214,10 +220,14 @@ class FriendViewSet(ModelViewSet):
         uid = data.get('uid')
         friendId = data.get('friendId')
 
-        fr = Friend.objects.filter(user_id=uid, related_person=friendId)
-        fr.update(relation=1)
-
+        friend = Friend.objects.filter(user_id=uid, related_person=friendId, relation_id=2)
+        if friend.exists():
+            friend.update(relation=1)
+            return Response({
+                'response': True,
+                'message': '成功'
+            })
         return Response({
-            'response': True,
-            'message': '成功'
+            'response': False,
+            'message': '沒有此摯友'
         })

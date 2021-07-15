@@ -1,3 +1,6 @@
+from datetime import datetime
+
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import action, permission_classes
@@ -6,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from api.models import Group, StudyPlan, Schedule, PlanContent, \
-    GetStudyplan, StudyplanList, GroupStudyplanList, PersonalSchedule
+    GetStudyplan, StudyplanList, GroupStudyplanList, PersonalSchedule, GroupLog, Account, GroupMember
 from studyplan.serializers import StudyPlanSerializer, CreateStudyPlanSerializer, ScheduleSerializer
 
 
@@ -18,28 +21,38 @@ class StudyPlanViewSet(ModelViewSet):
     @action(detail=False, methods=['POST'])
     def create_studyplan(self, request):
         data = request.data
-        uid = data.pop('uid')
+        if not Account.objects.filter(user_id=data['uid']).exists():
+            return Response({'response':False, 'message':'帳號不存在'})
 
+        uid = data.pop('uid')
         serializer = CreateStudyPlanSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         subjects = serializer.validated_data.pop('subjects')
+        if len(subjects) == 0:
+            return Response({'response': False, 'message': '至少要有一個課程'})
 
         subject_all = []
         num = 0
         no = None
 
-        if data['sheduleNum'] == None:
+        if not data['sheduleNum']:
             serializer.validated_data.update({'type_id': 1})
             schedule_no = serializer.save()
             no = StudyPlan.objects.create(create_id=uid, schedule_no=schedule_no)
         elif isinstance(data['sheduleNum'],int):
+            if not Schedule.objects.filter(serial_no=data['sheduleNum']).exists():
+                return Response({'response': False, 'message': '未有行程建立'})
+            if not PersonalSchedule.objects.filter(schedule_no=data['sheduleNum'], user_id=uid).exists():
+                return Response({'response': False, 'message': '您非此行程建立者'})
+            if StudyPlan.objects.filter(schedule_no=data['sheduleNum']).count() > 0:
+                return Response({'response': False, 'message': '此行程已有讀書計畫'})
             no = Schedule.objects.get(pk=data['sheduleNum'])
             type_id = ScheduleSerializer(no).data['type']
             if type_id == 1:
-                sc = Schedule.objects.get(serial_no=ScheduleSerializer(no).data['serial_no'])
-                sc.schedule_start = data['schedule_start']
-                sc.schedule_end = data['schedule_end']
-                sc.save()
+                schedule = Schedule.objects.get(serial_no=ScheduleSerializer(no).data['serial_no'])
+                schedule.schedule_start = data['schedule_start']
+                schedule.schedule_end = data['schedule_end']
+                schedule.save()
 
                 no = StudyPlan.objects.create(create_id=uid, schedule_no=no)
             else:
@@ -61,22 +74,23 @@ class StudyPlanViewSet(ModelViewSet):
             'message': '成功'
         })
 
-
     @action(detail=False, methods=['PATCH'])
     def edit_studyplan(self, request):
         data = request.data
         uid = data.pop('uid')
         studyplanNum = data.pop('studyplanNum')
 
-        st = StudyPlan.objects.filter(create_id=uid, serial_no=studyplanNum)
-        if st.count() > 0:
+        studyplan = StudyPlan.objects.filter(create_id=uid, serial_no=studyplanNum)
+        if studyplan.exists():
             serializer = CreateStudyPlanSerializer(data=data)
             serializer.is_valid(raise_exception=True)
             subjects = serializer.validated_data.pop('subjects')
+            if len(subjects) == 0:
+                return Response({'response': False, 'message': '至少要有一個課程'})
 
             studyplan_no = StudyPlan.objects.get(pk=studyplanNum)
-            pl = PlanContent.objects.filter(plan_no=studyplan_no)
-            pl.delete()
+            plan_content = PlanContent.objects.filter(plan_no=studyplan_no)
+            plan_content.delete()
 
             subject_all = []
             num = 0
@@ -89,12 +103,15 @@ class StudyPlanViewSet(ModelViewSet):
             PlanContent.objects.bulk_create(subject_all)
 
             schedule_no = StudyPlanSerializer(studyplan_no).data['schedule_no']
-            sc = Schedule.objects.get(pk=schedule_no)
+            schedule = Schedule.objects.get(pk=schedule_no)
 
-            sc.schedule_name = data['schedule_name']
-            sc.schedule_start = data['schedule_start']
-            sc.schedule_end = data['schedule_end']
-            sc.save()
+            schedule.schedule_name = data['schedule_name']
+            schedule.schedule_start = data['schedule_start']
+            schedule.schedule_end = data['schedule_end']
+            schedule.save()
+            if schedule.connect_group_no:
+                GroupLog.objects.create(do_time=datetime.now(), group_no=schedule.connect_group_no, user_id=uid,
+                                        trigger_type='U', do_type_id=4)
 
             return Response({
                 'response': True,
@@ -115,26 +132,42 @@ class StudyPlanViewSet(ModelViewSet):
         studyplanNum = data.get('studyplanNum')
         groupNum = data.get('groupNum')
 
-        st = StudyPlan.objects.filter(create_id=uid, serial_no=studyplanNum)
-        if st.count() > 0:
-            sc = StudyPlan.objects.get(pk=studyplanNum)
-            scheduleNum = self.get_serializer(sc).data['schedule_no']
+        user_studyplan = StudyPlan.objects.filter(create_id=uid, serial_no=studyplanNum)
+        user_in_group = GroupMember.objects.filter(group_no=groupNum, user_id=uid, status_id__in=[1, 4])
+        if user_studyplan.exists() and user_in_group.exists():
+            studyplan = StudyPlan.objects.get(pk=studyplanNum)
+            schedule_no = self.get_serializer(studyplan).data['schedule_no']
 
             groupNum = Group.objects.get(pk=groupNum)
-            sc = Schedule.objects.get(pk=scheduleNum)
-            sc.connect_group_no = groupNum
-            sc.save()
-
-            return Response({
-                'response': True,
-                'message': '成功'
-            })
-        else:
+            schedule = Schedule.objects.get(pk=schedule_no)
+            if not schedule.connect_group_no:
+                schedule.connect_group_no = groupNum
+                schedule.save()
+                GroupLog.objects.create(do_time=datetime.now(), group_no=groupNum, user_id=uid,
+                                        trigger_type='I', do_type_id=4)
+                return Response({
+                    'response': True,
+                    'message': '成功'
+                })
+            elif schedule.connect_group_no != groupNum:
+                return Response({
+                    'response': False,
+                    'message': '失敗，讀書計畫僅能分享一個群組'
+                })
+            elif schedule.connect_group_no == groupNum:
+                return Response({
+                    'response': False,
+                    'message': '已分享過給此群組'
+                })
+        elif not user_in_group.exists():
             return Response({
                 'response': False,
-                'message': '您非此讀書計畫建立者，無法分享'
+                'message': '非此群組成員，無法分享'
             })
-
+        return Response({
+            'response': False,
+            'message': '您非此讀書計畫建立者，無法分享'
+        })
 
     @action(detail=False, methods=['PATCH'])
     def cancel_sharing(self, request):
@@ -143,18 +176,23 @@ class StudyPlanViewSet(ModelViewSet):
         uid = data.get('uid')
         studyplanNum = data.get('studyplanNum')
 
-        st = StudyPlan.objects.filter(create_id=uid, serial_no=studyplanNum)
-        if st.count() > 0:
-            sc = StudyPlan.objects.get(pk=studyplanNum)
-            scheduleNum = self.get_serializer(sc).data['schedule_no']
-
-            sc = Schedule.objects.get(pk=scheduleNum)
-            sc.connect_group_no = None
-            sc.save()
-
+        user_studyplan = StudyPlan.objects.filter(create_id=uid, serial_no=studyplanNum)
+        if user_studyplan.exists():
+            studyplan = StudyPlan.objects.get(pk=studyplanNum)
+            schedule_no = self.get_serializer(studyplan).data['schedule_no']
+            schedule = Schedule.objects.get(pk=schedule_no)
+            if schedule.connect_group_no:
+                GroupLog.objects.create(do_time=datetime.now(), group_no=schedule.connect_group_no, user_id=uid,
+                                        trigger_type='D', do_type_id=4)
+                schedule.connect_group_no = None
+                schedule.save()
+                return Response({
+                    'response': True,
+                    'message': '成功'
+                })
             return Response({
-                'response': True,
-                'message': '成功'
+                'response': False,
+                'message': '已取消分享'
             })
         else:
             return Response({
@@ -169,19 +207,19 @@ class StudyPlanViewSet(ModelViewSet):
         uid = data.get('uid')
         studyplanNum = data.get('studyplanNum')
 
-        st = StudyPlan.objects.filter(create_id=uid, serial_no=studyplanNum)
-        if st.count() > 0:
-            pl = PlanContent.objects.filter(pk=studyplanNum)
-            pl.delete()
+        user_studyplan = StudyPlan.objects.filter(create_id=uid, serial_no=studyplanNum)
+        if user_studyplan.exists():
+            plan_content = PlanContent.objects.filter(pk=studyplanNum)
+            plan_content.delete()
 
-            st = StudyPlan.objects.get(pk=studyplanNum)
-            scheduleNum = self.get_serializer(st).data['schedule_no']
-            st.delete()
+            studyplan = StudyPlan.objects.get(pk=studyplanNum)
+            schedule_no = self.get_serializer(studyplan).data['schedule_no']
+            studyplan.delete()
 
-            pr = PersonalSchedule.objects.filter(schedule_no=scheduleNum)
-            if pr.count() == 0:
-                sc = Schedule.objects.get(pk=scheduleNum)
-                sc.delete()
+            personal_schedule = PersonalSchedule.objects.filter(schedule_no=schedule_no)
+            if not personal_schedule.exists():
+                schedule = Schedule.objects.get(pk=schedule_no)
+                schedule.delete()
 
             return Response({
                 'response': True,
@@ -199,22 +237,22 @@ class StudyPlanViewSet(ModelViewSet):
 
         uid = data.get('uid')
         studyplanNum = data.get('studyplanNum')
-        st = GetStudyplan.objects.filter(create_id=uid, plan_no=studyplanNum)
+        studyplan = GetStudyplan.objects.filter(create_id=uid, plan_no=studyplanNum)
 
-        if st.count() > 0:
+        if studyplan.count() > 0:
             return Response({
-                'title': st.first().schedule_name,
-                'date': st.first().field_date,
-                'startTime': st.first().schedule_start,
-                'endTime': st.first().schedule_end,
+                'title': studyplan.first().schedule_name,
+                'date': studyplan.first().field_date,
+                'startTime': studyplan.first().schedule_start,
+                'endTime': studyplan.first().schedule_end,
                 'subject': [
                     {
-                        'subjectName': t.subject,
-                        'subjectStart': t.plan_start,
-                        'subjectEnd': t.plan_end,
-                        'rest': t.is_rest,
+                        'subjectName': s.subject,
+                        'subjectStart': s.plan_start,
+                        'subjectEnd': s.plan_end,
+                        'rest': s.is_rest,
                     }
-                    for t in st
+                    for s in studyplan
                 ]
             })
         else:
@@ -223,58 +261,45 @@ class StudyPlanViewSet(ModelViewSet):
                 'message': '沒有讀書計畫'
             })
 
-
     @action(detail=False)
     def personal_list(self, request):
         data = request.query_params
 
         uid = data.get('uid')
-        st = StudyplanList.objects.filter(create_id=uid)
+        studyplan = StudyplanList.objects.filter(create_id=uid)
 
-        if st.count() > 0:
-            return Response({
-                'studyplan': [
-                    {
-                        'studyplanNum': t.studyplan_num,
-                        'title': t.schedule_name,
-                        'date': t.field_date,
-                        'startTime': t.schedule_start,
-                        'endTime': t.schedule_end,
-                    }
-                    for t in st
-                ]
-            })
-        else:
-            return Response({
-                'response': False,
-                'message': '沒有個人讀書計畫'
-            })
+        return Response({
+            'studyplan': [
+                {
+                    'studyplanNum': s.studyplan_num,
+                    'title': s.schedule_name,
+                    'date': s.field_date,
+                    'startTime': s.schedule_start,
+                    'endTime': s.schedule_end,
+                }
+                for s in studyplan
+            ]
+        })
 
     @action(detail=False)
     def group_list(self, request):
         data = request.query_params
 
         uid = data.get('uid')
-        st = GroupStudyplanList.objects.filter(user_id=uid)
+        studyplan = GroupStudyplanList.objects.filter(user_id=uid)
 
-        if st.count() > 0:
-            return Response({
-                'studyplan': [
-                    {
-                        'studyplanNum': t.studyplan_num,
-                        'title': t.schedule_name,
-                        'date': t.field_date,
-                        'startTime': t.schedule_start,
-                        'endTime': t.schedule_end,
-                    }
-                    for t in st
-                ]
-            })
-        else:
-            return Response({
-                'response': False,
-                'message': '沒有群組讀書計畫'
-            })
+        return Response({
+            'studyplan': [
+                {
+                    'studyplanNum': s.studyplan_num,
+                    'title': s.schedule_name,
+                    'date': s.field_date,
+                    'startTime': s.schedule_start,
+                    'endTime': s.schedule_end,
+                }
+                for s in studyplan
+            ]
+        })
 
     @action(detail=False)
     def one_group_list(self, request):
@@ -282,23 +307,17 @@ class StudyPlanViewSet(ModelViewSet):
 
         uid = data.get('uid')
         groupNum = data.get('groupNum')
-        st = GroupStudyplanList.objects.filter(user_id=uid,group_no=groupNum,status_id__in=[1,4])
+        studyplan = GroupStudyplanList.objects.filter(user_id=uid,group_no=groupNum,status_id__in=[1,4])
 
-        if st.count() > 0:
-            return Response({
-                'studyplan': [
-                    {
-                        'studyplanNum': t.studyplan_num,
-                        'title': t.schedule_name,
-                        'date': t.field_date,
-                        'startTime': t.schedule_start,
-                        'endTime': t.schedule_end,
-                    }
-                    for t in st
-                ]
-            })
-        else:
-            return Response({
-                'response': False,
-                'message': '查無結果'
-            })
+        return Response({
+            'studyplan': [
+                {
+                    'studyplanNum': s.studyplan_num,
+                    'title': s.schedule_name,
+                    'date': s.field_date,
+                    'startTime': s.schedule_start,
+                    'endTime': s.schedule_end,
+                }
+                for s in studyplan
+            ]
+        })
