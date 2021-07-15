@@ -140,7 +140,7 @@ class Group(models.Model):
     serial_no = models.AutoField(primary_key=True)
     group_name = models.CharField(max_length=255)
     founder = models.ForeignKey(Account, models.DO_NOTHING, db_column='founder')
-    type = models.ForeignKey('Type', models.DO_NOTHING, blank=True, null=True)
+    type = models.ForeignKey('Type', models.DO_NOTHING, blank=False, null=False)
     found_time = models.DateTimeField(default=django.utils.timezone.now)
     is_temporary_group = models.IntegerField()
 
