@@ -19,6 +19,8 @@ from schedule import views as schedule_views
 from note import views as note_views
 # vote
 from vote import views as vote_views
+# setting
+from setting import views as setting_views
 
 router = DefaultRouter()
 router.register('friend', friend_views.FriendViewSet)
@@ -34,6 +36,9 @@ router.register('schedule', schedule_views.ScheduleViewSet)
 router.register('note', note_views.NoteViewSet)
 # vote
 router.register('vote', vote_views.VoteViewSet)
+# setting
+router.register('setting', setting_views.SettingViewSet)
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
