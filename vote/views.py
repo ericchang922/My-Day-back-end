@@ -2,7 +2,7 @@
 from datetime import datetime
 # django
 from django.core.exceptions import ValidationError
-from django.db.models import ObjectDoesNotExist
+from django.db.models import ObjectDoesNotExist, Count
 # rest
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
@@ -176,7 +176,7 @@ class VoteViewSet(ModelViewSet):
             except:
                 return err(Msg.Err.Group.member_read)
             if len(group_member) > 0:
-                return no_authority()
+                return no_authority('群組')
             else:
                 return not_found(Msg.NotFound.user_vote)
 
@@ -201,8 +201,153 @@ class VoteViewSet(ModelViewSet):
             return err(Msg.Err.Vote.data_delete)
         return success()
 
-# /vote/get/  ------------------------------------------------------------------------------------------------------
-# /vote/get_list/  -------------------------------------------------------------------------------------------------
-# /vote/vote/  -----------------------------------------------------------------------------------------------------
-# /vote/add_items/  ------------------------------------------------------------------------------------------------
-# /vote/end/  ------------------------------------------------------------------------------------------------------
+    # /vote/get/  ------------------------------------------------------------------------------------------------------
+    @action(detail=False)
+    def get(self, request):
+        data = request.query_params
+
+        uid = data.get('uid')
+        vote_no = data.get('voteNum')
+
+        try:
+            vote = Vote.objects.get(serial_no=vote_no)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.vote)
+        except:
+            return err(Msg.Err.Vote.select)
+
+        try:
+            group_member = GroupMember.objects.get(group_no=vote.group_no, user_id=uid)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.not_in_group)
+        except:
+            return err(Msg.Err.Group.member_read)
+
+        if group_member.status_id != 1 and group_member.status_id != 4:
+            return no_authority('群組')
+
+        try:
+            vote_option = VoteDateOption.objects.filter(
+                vote_no=vote) if vote.option_type_id == 2 else VoteOption.objects.filter(vote_no=vote)
+        except:
+            return err(Msg.Err.Vote.option_read)
+
+        try:
+            vote_record = VoteRecord.objects.filter(vote_no=vote)
+        except:
+            return err(Msg.Err.Vote.record_read)
+
+        vote_option_list = []
+        for i in vote_option:
+            vote_option_list.append(
+                {
+                    'voteItemNum': i.option_num,
+                    'voteItemName': i.content
+
+                }
+            )
+        response = {
+            'title': vote.title,
+            'voteItems': vote_option_list,
+            'addItemPermit': bool(vote.is_add_option),
+            'deadline': vote.end_time,
+            'anonymous': bool(vote.is_anonymous),
+            'chooseVoteQuantity': vote.multiple_choice,
+            'voteCount': vote_record.count()
+        }
+        return success(response)
+
+    # /vote/get_list/  -------------------------------------------------------------------------------------------------
+    @action(detail=False)
+    def get_list(self, request):
+        data = request.query_params
+
+        uid = data.get('uid')
+        group_no = data.get('groupNum')
+
+        try:
+            GroupMember.objects.get(group_no=group_no, user_id=uid, status__in=[1, 4])
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.not_in_group)
+        except:
+            return err(Msg.Err.Group.member_read)
+
+        try:
+            vote = Vote.objects.filter(group_no=group_no)
+        except:
+            return err(Msg.Err.Vote.select)
+
+        vote_list = []
+        for i in vote:
+            try:
+                vote_record = VoteRecord.objects.filter(vote_no=i.serial_no)
+            except:
+                return err(Msg.Err.Vote.record_read)
+
+            try:
+                is_vote = True if VoteRecord.objects.filter(vote_no=i.serial_no, user_id=uid).count() > 0 else False
+            except:
+                return err(Msg.Err.Vote.record_read)
+            vote_list.append(
+                {
+                    'voteNum': i.serial_no,
+                    'votersNum': vote_record.values('user_id').annotate(Count('user_id')).count(),
+                    'title': i.title,
+                    'isVoteType': is_vote
+                }
+            )
+
+        response = {'vote': vote_list}
+        return success(response)
+
+    # /vote/vote/  -----------------------------------------------------------------------------------------------------
+    @action(detail=False, methods=['POST'])
+    def vote(self, request):
+        data = request.data
+
+        uid = data.get('uid')
+        vote_no = data.get('voteNum')
+        vote_option_no = data.get('voteItemNum')
+
+        try:
+            vote = Vote.objects.get(serial_no=vote_no)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.vote)
+        except:
+            return err(Msg.Err.Vote.select)
+
+        try:
+            GroupMember.objects.get(user_id=uid, group_no=vote.group_no, status__in=[1, 4])
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.not_in_group)
+        except:
+            return err(Msg.Err.Group.member_read)
+
+        if len(vote_option_no) > vote.multiple_choice:
+            return limit_vote()
+
+        try:
+            vote_record = VoteRecord.objects.filter(user_id=uid, vote_no=vote)
+        except:
+            return err(Msg.Err.Vote.record_read)
+
+        record_list = []
+        for i in vote_record:
+            record_list.append(i.option_num)
+            if i.option_num not in vote_option_no:
+                try:
+                    VoteRecord.objects.filter(user_id=uid, vote_no=vote, option_num=i.option_num).delete()
+                except:
+                    return err(Msg.Err.Vote.record_read)
+
+        for i in vote_option_no:
+            if i not in record_list:
+                try:
+                    VoteRecord.objects.create(vote_no=vote, option_num=i, user_id=uid, vote_time=datetime.now())
+                except:
+                    return err(Msg.Err.Vote.record_create)
+
+        return success()
+
+    # /vote/add_items/  ------------------------------------------------------------------------------------------------
+    # /vote/end/  ------------------------------------------------------------------------------------------------------

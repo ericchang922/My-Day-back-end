@@ -32,3 +32,7 @@ def no_item():
 
 def can_not_edit():
     return Response({'response': False, 'message': '已經投票不能修改'}, status=status.HTTP_403_FORBIDDEN)
+
+
+def limit_vote():
+    return Response({'respons': False, 'message': '超過票數限制'}, status=status.HTTP_400_BAD_REQUEST)
