@@ -9,11 +9,11 @@ def success(response={}):
     return Response(response, status=status.HTTP_200_OK)
 
 
-def err(message='錯誤'):
-    return Response({'response': False, 'message': message}, status=status.HTTP_400_BAD_REQUEST)
+def err(message='錯誤', err_code=''):
+    return Response({'response': False, 'message': message, 'err_code': err_code}, status=status.HTTP_400_BAD_REQUEST)
 
 
-def not_found(message="不存在"):
+def not_found(message='不存在'):
     return Response({'response': False, 'message': message}, status=status.HTTP_404_NOT_FOUND)
 
 
