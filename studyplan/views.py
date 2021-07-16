@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from api.models import Group, StudyPlan, Schedule, PlanContent, \
-    GetStudyplan, StudyplanList, GroupStudyplanList, PersonalSchedule, GroupLog, Account, GroupMember
+    GetStudyplan, StudyplanList, GroupStudyplanList, PersonalSchedule, GroupLog, Account, GroupMember, Note
 from studyplan.serializers import StudyPlanSerializer, CreateStudyPlanSerializer, ScheduleSerializer
 
 
@@ -85,6 +85,12 @@ class StudyPlanViewSet(ModelViewSet):
             serializer = CreateStudyPlanSerializer(data=data)
             serializer.is_valid(raise_exception=True)
             subjects = serializer.validated_data.pop('subjects')
+
+            for subject in subjects:
+                note_no = subject['note_no']
+                if note_no and not Note.objects.filter(serial_no=note_no, create_id=uid).exists():
+                    return Response({'response': False, 'message': '筆記選取錯誤'})
+
             if len(subjects) == 0:
                 return Response({'response': False, 'message': '至少要有一個課程'})
 
@@ -96,9 +102,10 @@ class StudyPlanViewSet(ModelViewSet):
             num = 0
             for subject in subjects:
                 num += 1
+                note_no = Note.objects.get(pk=subject['note_no']) if subject['note_no'] else None
                 subject_item = PlanContent(plan_no=studyplan_no, plan_num=num, subject=subject['subject'],
-                                           plan_start=subject['plan_start'], plan_end=subject['plan_end']
-                                           , is_rest=subject['is_rest'])
+                                           plan_start=subject['plan_start'], plan_end=subject['plan_end'],
+                                           note_no=note_no, is_rest=subject['is_rest'])
                 subject_all.append(subject_item)
             PlanContent.objects.bulk_create(subject_all)
 
