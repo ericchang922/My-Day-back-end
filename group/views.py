@@ -303,7 +303,7 @@ class GroupViewSet(ModelViewSet):
         uid = data.get('uid')
         friend_id = data.get('friendId')
         group_num = data.get('groupNum')
-        status_id = data.get('statusId')
+        status_id = int(data.get('statusId'))
 
         try:
             user_in_account = Account.objects.get(user_id=uid)
@@ -312,6 +312,12 @@ class GroupViewSet(ModelViewSet):
             return Response({
                 'response': False,
                 'message': '資料不存在'
+            })
+
+        if status_id not in [1, 4]:
+            return Response({
+                'response': False,
+                'message': '狀態編號錯誤'
             })
 
         user_is_manager = GroupMember.objects.filter(user_id=uid, group_no=group_num, status_id=4)
@@ -326,7 +332,7 @@ class GroupViewSet(ModelViewSet):
             else:
                 return Response({
                     'response': False,
-                    'message': '此人不存在'
+                    'message': '此人不是群組成員'
                 })
         else:
             return Response({
