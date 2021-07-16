@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from api.models import Account, Group, GroupMember, GroupList, GroupInviteList, GetGroup, GetGroupNoVote, GroupLog, \
-    Friend
+    Friend, Schedule
 from group.serializers import GroupSerializer, CreateGroupRequestSerializer
 
 # Create your views here.
@@ -58,22 +58,22 @@ class GroupViewSet(ModelViewSet):
         data = request.data
 
         uid = data.get('uid')
-        groupNum = data.get('groupNum')
+        group_num = data.get('groupNum')
         title = data.get('title')
-        typeId = data.get('typeId')
+        type_id = data.get('typeId')
 
-        group_member = GroupMember.objects.filter(group_no=groupNum, user_id=uid, status_id__in=[1, 4])
+        group_member = GroupMember.objects.filter(group_no=group_num, user_id=uid, status_id__in=[1, 4])
 
         if group_member.exists():
-            group = Group.objects.get(serial_no=groupNum)
+            group = Group.objects.get(serial_no=group_num)
 
-            if not typeId:
-                typeId = group.type_id
+            if not type_id:
+                type_id = group.type_id
             if not title:
                 title = group.group_name
 
             group.group_name = title
-            group.type_id = typeId
+            group.type_id = type_id
             group.save()
 
             GroupLog.objects.create(do_time=datetime.now(), group_no=group, user_id=uid,
@@ -94,17 +94,17 @@ class GroupViewSet(ModelViewSet):
         data = request.data
 
         uid = data.get('uid')
-        friendId = data.get('friendId')
-        groupNum = data.get('groupNum')
+        friend_id = data.get('friendId')
+        group_num = data.get('groupNum')
         try:
             user_in_account = Account.objects.get(user_id=uid)
-            friend_in_account = Account.objects.get(user_id=friendId)
-            groupNum = Group.objects.get(pk=groupNum)
+            friend_in_account = Account.objects.get(user_id=friend_id)
+            group_num = Group.objects.get(pk=group_num)
 
-            friendship = Friend.objects.filter(user_id=uid, related_person=friendId, relation_id__in=[1, 2])
-            group_manager = GroupMember.objects.filter(group_no=groupNum, user_id=uid, status_id=4)
+            friendship = Friend.objects.filter(user_id=uid, related_person=friend_id, relation_id__in=[1, 2])
+            group_manager = GroupMember.objects.filter(group_no=group_num, user_id=uid, status_id=4)
             if friendship.exists() and group_manager.exists():
-                GroupMember.objects.create(group_no=groupNum, user_id=friendId, status_id=2, inviter_id=uid)
+                GroupMember.objects.create(group_no=group_num, user_id=friend_id, status_id=2, inviter_id=uid)
                 return Response({
                     'response': True,
                     'message': '成功'
@@ -134,18 +134,18 @@ class GroupViewSet(ModelViewSet):
         data = request.data
 
         uid = data.get('uid')
-        groupNum = data.get('groupNum')
-        statusId = int(data.get('statusId'))
+        group_num = data.get('groupNum')
+        status_id = int(data.get('statusId'))
 
-        group_member = GroupMember.objects.filter(group_no=groupNum, user_id=uid)
-        if group_member.exists() and statusId in [1, 3]:
-            if statusId == 1:
+        group_member = GroupMember.objects.filter(group_no=group_num, user_id=uid)
+        if group_member.exists() and status_id in [1, 3]:
+            if status_id == 1:
                 group_member.update(status_id=1, join_time=datetime.now())
                 return Response({
                     'response': True,
                     'message': '加入成功'
                 })
-            elif statusId == 3:
+            elif status_id == 3:
                 group_member.delete()
                 return Response({
                     'response': True,
@@ -153,8 +153,8 @@ class GroupViewSet(ModelViewSet):
                 })
         try:
             user = Account.objects.get(user_id=uid)
-            group = Group.objects.get(serial_no=groupNum)
-            if statusId != 1:
+            group = Group.objects.get(serial_no=group_num)
+            if status_id != 1:
                 return Response({
                     'response': False,
                     'message': '狀態編號錯誤'
@@ -195,9 +195,9 @@ class GroupViewSet(ModelViewSet):
         data = request.query_params
 
         uid = data.get('uid')
-        groupNum = data.get('groupNum')
-        group = GroupMember.objects.filter(user_id=uid, group_no=groupNum, status_id__in=[1, 4])
-        get_group = GetGroup.objects.filter(user_id=uid, group_no=groupNum, status_id__in=[1, 4])
+        group_num = data.get('groupNum')
+        group = GroupMember.objects.filter(user_id=uid, group_no=group_num, status_id__in=[1, 4])
+        get_group = GetGroup.objects.filter(user_id=uid, group_no=group_num, status_id__in=[1, 4])
         group_has_vote = 1 if get_group.count() > 0 else 0
 
         if group.count() == 0:
@@ -206,7 +206,7 @@ class GroupViewSet(ModelViewSet):
                 'message': '您不屬於此群組'
             })
         elif get_group.count() == 0:
-            get_group = GetGroupNoVote.objects.filter(user_id=uid, group_no=groupNum, status_id__in=[1, 4])
+            get_group = GetGroupNoVote.objects.filter(user_id=uid, group_no=group_num, status_id__in=[1, 4])
 
         return Response({
             'title': get_group.first().group_name,
@@ -226,10 +226,10 @@ class GroupViewSet(ModelViewSet):
         data = request.query_params
 
         uid = data.get('uid')
-        groupNum = data.get('groupNum')
-        user_in_group = GroupMember.objects.filter(user_id=uid, group_no=groupNum, status_id__in=[1, 4])
+        group_num = data.get('groupNum')
+        user_in_group = GroupMember.objects.filter(user_id=uid, group_no=group_num, status_id__in=[1, 4])
         if user_in_group.count() > 0:
-            group = GroupList.objects.filter(group_no=groupNum)
+            group = GroupList.objects.filter(group_no=group_num)
             return Response({
                 'founderPhoto': base64.b64encode(group.first().founder_photo),
                 'founderName': group.first().founder_name,
@@ -273,11 +273,11 @@ class GroupViewSet(ModelViewSet):
         data = request.data
 
         uid = data.get('uid')
-        groupNum = data.get('groupNum')
+        group_num = data.get('groupNum')
 
-        user_in_group = GroupMember.objects.filter(user_id=uid, group_no=groupNum)
-        group_manager = GroupMember.objects.filter(group_no=groupNum, status_id=4)
-        group_member = GroupMember.objects.filter(group_no=groupNum, status_id__in=[1, 2])
+        user_in_group = GroupMember.objects.filter(user_id=uid, group_no=group_num)
+        group_manager = GroupMember.objects.filter(group_no=group_num, status_id=4)
+        group_member = GroupMember.objects.filter(group_no=group_num, status_id__in=[1, 2])
 
         if user_in_group.exists():
             if user_in_group.first().status_id == 4 and group_manager.count() == 1 and group_member.count() > 0:
@@ -301,36 +301,42 @@ class GroupViewSet(ModelViewSet):
         data = request.data
 
         uid = data.get('uid')
-        friendId = data.get('friendId')
-        groupNum = data.get('groupNum')
-        statusId = data.get('statusId')
+        friend_id = data.get('friendId')
+        group_num = data.get('groupNum')
+        status_id = int(data.get('statusId'))
 
         try:
             user_in_account = Account.objects.get(user_id=uid)
-            friend_in_account = Account.objects.get(user_id=friendId)
+            friend_in_account = Account.objects.get(user_id=friend_id)
         except ObjectDoesNotExist:
             return Response({
                 'response': False,
                 'message': '資料不存在'
             })
 
-        user_in_group = GroupMember.objects.filter(user_id=uid, group_no=groupNum)
-        if user_in_group.exists():
-            if user_in_group.first().status_id != 4:
-                return Response({
-                    'response': False,
-                    'message': '您非管理者無法指定他人為管理者'
-                })
-            else:
-                group_member = GroupMember.objects.filter(user_id=friendId, group_no=groupNum)
-                group_member.update(status_id=4)
+        if status_id not in [1, 4]:
+            return Response({
+                'response': False,
+                'message': '狀態編號錯誤'
+            })
 
+        user_is_manager = GroupMember.objects.filter(user_id=uid, group_no=group_num, status_id=4)
+        group_member = GroupMember.objects.filter(user_id=friend_id, group_no=group_num)
+        if user_is_manager.exists():
+            if group_member.exists():
+                group_member.update(status_id=status_id)
                 return Response({
                     'response': True,
                     'message':'成功'
                 })
-        return Response({
-            'response': False,
-            'message': '此人不在群組'
-        })
+            else:
+                return Response({
+                    'response': False,
+                    'message': '此人不是群組成員'
+                })
+        else:
+            return Response({
+                'response': False,
+                'message': '非群組管理者，無法設定'
+            })
 

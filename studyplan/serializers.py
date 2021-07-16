@@ -14,15 +14,17 @@ class StudyPlanContentSerializer(serializers.Serializer):
     subject = serializers.CharField(required=True)
     plan_start = serializers.DateTimeField(required=True)
     plan_end = serializers.DateTimeField(required=True)
-    is_rest = serializers.CharField(required=True)
+    note_no = serializers.IntegerField(default=None, allow_null=True)
+    is_rest = serializers.IntegerField(required=True)
 
 
-class CreateStudyPlanSerializer(serializers.ModelSerializer):
+class CreateStudyPlanSerializer(ModelSerializer):
     subjects = StudyPlanContentSerializer(many=True)
 
     class Meta:
         model = Schedule
         fields = '__all__'
+
 
 class ScheduleSerializer(ModelSerializer):
     class Meta:
