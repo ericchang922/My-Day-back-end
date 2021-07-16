@@ -216,6 +216,9 @@ class VoteViewSet(ModelViewSet):
         except:
             return err(Msg.Err.Vote.select)
 
+        if vote.end_time < datetime.now():
+            return vote_expired()
+
         try:
             group_member = GroupMember.objects.get(group_no=vote.group_no, user_id=uid)
         except ObjectDoesNotExist:
@@ -250,7 +253,7 @@ class VoteViewSet(ModelViewSet):
             'title': vote.title,
             'voteItems': vote_option_list,
             'addItemPermit': bool(vote.is_add_option),
-            'deadline': vote.end_time,
+            'deadline': str(vote.end_time),
             'anonymous': bool(vote.is_anonymous),
             'chooseVoteQuantity': vote.multiple_choice,
             'voteCount': vote_record.count()
@@ -279,23 +282,24 @@ class VoteViewSet(ModelViewSet):
 
         vote_list = []
         for i in vote:
-            try:
-                vote_record = VoteRecord.objects.filter(vote_no=i.serial_no)
-            except:
-                return err(Msg.Err.Vote.record_read)
+            if i.end_time >= datetime.now():
+                try:
+                    vote_record = VoteRecord.objects.filter(vote_no=i.serial_no)
+                except:
+                    return err(Msg.Err.Vote.record_read)
 
-            try:
-                is_vote = True if VoteRecord.objects.filter(vote_no=i.serial_no, user_id=uid).count() > 0 else False
-            except:
-                return err(Msg.Err.Vote.record_read)
-            vote_list.append(
-                {
-                    'voteNum': i.serial_no,
-                    'votersNum': vote_record.values('user_id').annotate(Count('user_id')).count(),
-                    'title': i.title,
-                    'isVoteType': is_vote
-                }
-            )
+                try:
+                    is_vote = True if VoteRecord.objects.filter(vote_no=i.serial_no, user_id=uid).count() > 0 else False
+                except:
+                    return err(Msg.Err.Vote.record_read)
+                vote_list.append(
+                    {
+                        'voteNum': i.serial_no,
+                        'votersNum': vote_record.values('user_id').annotate(Count('user_id')).count(),
+                        'title': i.title,
+                        'isVoteType': is_vote
+                    }
+                )
 
         response = {'vote': vote_list}
         return success(response)
