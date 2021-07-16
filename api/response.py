@@ -35,4 +35,14 @@ def can_not_edit():
 
 
 def limit_vote():
-    return Response({'respons': False, 'message': '超過票數限制'}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({'response': False, 'message': '超過票數限制'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+def vote_option_exist(message=''):
+    if message != '':
+        message = f'編號{message}的'
+    return Response({'response': False, 'message': f'{message}投票項目編號已經存在'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+def vote_expired():
+    return Response({'response': False, 'message': '投票已過期'}, status=status.HTTP_400_BAD_REQUEST)

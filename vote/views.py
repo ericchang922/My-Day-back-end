@@ -2,7 +2,7 @@
 from datetime import datetime
 # django
 from django.core.exceptions import ValidationError
-from django.db.models import ObjectDoesNotExist, Count
+from django.db.models import ObjectDoesNotExist, Count, Max
 # rest
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
@@ -350,4 +350,103 @@ class VoteViewSet(ModelViewSet):
         return success()
 
     # /vote/add_items/  ------------------------------------------------------------------------------------------------
-    # /vote/end/  ------------------------------------------------------------------------------------------------------
+    @action(detail=False, methods=['POST'])
+    def add_items(self, request):
+        data = request.data
+
+        uid = data.get('uid')
+        vote_no = data.get('voteNum')
+        vote_items = data.get('voteItems')
+
+        try:
+            vote = Vote.objects.get(serial_no=vote_no)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.vote)
+        except:
+            return err(Msg.Err.Vote.select)
+
+        if vote.end_time < datetime.now():
+            return vote_expired()
+
+        try:
+            GroupMember.objects.get(user_id=uid, group_no=vote.group_no, status__in=[1, 4])
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.not_in_group)
+        except:
+            return err(Msg.Err.Group.member_read)
+
+        vote_option = VoteDateOption if vote.option_type_id == 2 else VoteOption
+        exist_no_list = []
+        exist_cotent_list = []
+        for i in vote_items:
+            option_no = i['voteItemNum']
+            content = i['voteItemName']
+            try:
+                vote_option.objects.get(vote_no=vote, option_num=option_no)
+                exist_no_list.append(option_no)
+                exist_cotent_list.append(content)
+            except ObjectDoesNotExist:
+                vote_option.objects.create(vote_no=vote, option_num=option_no, content=content)
+        if len(exist_no_list) > 0:
+            return vote_option_exist(f'{str(exist_no_list)}內容為{str(exist_cotent_list)}')
+        return success
+
+    # /vote/get_end_list/  ---------------------------------------------------------------------------------------------
+    @action(detail=False)
+    def get_end_list(self, request):
+        data = request.query_params
+
+        uid = data.get('uid')
+        group_no = data.get('groupNum')
+
+        try:
+            GroupMember.objects.get(user_id=uid, group_no=group_no)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.not_in_group)
+        except:
+            return err(Msg.Err.Group.member_read)
+
+        try:
+            vote = Vote.objects.filter(group_no=group_no)
+        except:
+            return err(Msg.Err.Vote.select)
+
+        vote_list = []
+        for i in vote:
+            if i.end_time < datetime.now():
+                vote_no = i.serial_no
+                vote_option = VoteDateOption if i.option_type_id == 2 else VoteOption
+
+                try:
+                    vote_record = VoteRecord.objects.filter(vote_no=vote_no).values('option_num').annotate(
+                        count=Count('user_id'))
+                    result_count = vote_record.filter().aggregate(vote_count=Max('count'))['vote_count']
+                    result_data = vote_record.filter(count=result_count)
+                except:
+                    return err(Msg.Err.Vote.record_read)
+
+                result = []
+                for j in result_data:
+                    try:
+                        option_num = j['option_num']
+                        result.append(
+                            {
+                                'voteResultNum': option_num,
+                                'resultContent': vote_option.objects.get(vote_no=vote_no,
+                                                                         option_num=option_num).content,
+                            }
+                        )
+                    except ObjectDoesNotExist:
+                        return not_found(Msg.NotFound.vote_option)
+                    except:
+                        return err(Msg.Err.Vote.select)
+
+                vote_list.append(
+                    {
+                        'title': i.title,
+                        'result': result,
+                        'resultCont': result_count
+                    }
+                )
+
+        return success({'vote': vote_list})
