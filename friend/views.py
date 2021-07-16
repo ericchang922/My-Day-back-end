@@ -24,10 +24,10 @@ class FriendViewSet(ModelViewSet):
         data = request.data
 
         uid = data.get('uid')
-        friendId = data.get('friendId')
+        friend_id = data.get('friendId')
         try:
             user = Account.objects.get(pk=uid)
-            friend = Account.objects.get(pk=friendId)
+            friend = Account.objects.get(pk=friend_id)
             invite = Relation.objects.get(pk=3)
             be_invited = Relation.objects.get(pk=4)
 
@@ -54,9 +54,9 @@ class FriendViewSet(ModelViewSet):
         data = request.data
 
         uid = data.get('uid')
-        friendId = data.get('friendId')
+        friend_id = data.get('friendId')
 
-        friend = Friend.objects.filter(user_id=uid, related_person=friendId, relation_id=1)
+        friend = Friend.objects.filter(user_id=uid, related_person=friend_id, relation_id=1)
         if friend.exists():
             best_friend = Relation.objects.get(pk=2)
             friend.update(relation=best_friend)
@@ -74,16 +74,16 @@ class FriendViewSet(ModelViewSet):
         data = request.query_params
 
         uid = data.get('uid')
-        friendId = data.get('friendId')
+        friend_id = data.get('friendId')
 
-        friend = GetFriend.objects.filter(user_id=uid, related_person=friendId, relation_id__in=[1, 2])
+        friend = GetFriend.objects.filter(user_id=uid, related_person=friend_id, relation_id__in=[1, 2])
         if friend.exists():
-            personal_timetable = PersonalTimetable.objects.filter(user_id=friendId,
+            personal_timetable = PersonalTimetable.objects.filter(user_id=friend_id,
                                                                   semester_start__lte=datetime.now(),
                                                                   semester_end__gte=datetime.now())
 
-            public = Account.objects.get(user_id=friendId).is_public
-            public_to_friend = Friend.objects.filter(user_id=friendId,related_person=uid).first().is_public_timetable
+            public = Account.objects.get(user_id=friend_id).is_public
+            public_to_friend = Friend.objects.filter(user_id=friend_id,related_person=uid).first().is_public_timetable
 
             timetable_no = 0
             if personal_timetable.exists():
@@ -161,21 +161,21 @@ class FriendViewSet(ModelViewSet):
         data = request.data
 
         uid = data.get('uid')
-        friendId = data.get('friendId')
-        relationId = int(data.get('relationId'))
+        friend_id = data.get('friendId')
+        relation_id = int(data.get('relationId'))
 
-        user_status = Friend.objects.filter(user=uid, related_person=friendId)
-        related_person_status = Friend.objects.filter(related_person=uid, user=friendId)
+        user_status = Friend.objects.filter(user=uid, related_person=friend_id)
+        related_person_status = Friend.objects.filter(related_person=uid, user=friend_id)
 
         if user_status.exists() and related_person_status.exists():
-            if relationId == 1:
+            if relation_id == 1:
                 user_status.update(relation=1)
                 related_person_status.update(relation=1)
                 return Response({
                     'response': True,
                     'message': '已接受邀請'
                 })
-            elif relationId == 5:
+            elif relation_id == 5:
                 user_status.delete()
                 related_person_status.delete()
                 return Response({
@@ -197,10 +197,10 @@ class FriendViewSet(ModelViewSet):
         data = request.data
 
         uid = data.get('uid')
-        friendId = data.get('friendId')
+        friend_id = data.get('friendId')
 
-        user_friendship = Friend.objects.filter(user=uid, related_person=friendId)
-        friend_friendship = Friend.objects.filter(related_person=uid, user=friendId)
+        user_friendship = Friend.objects.filter(user=uid, related_person=friend_id)
+        friend_friendship = Friend.objects.filter(related_person=uid, user=friend_id)
         if user_friendship.exists() and friend_friendship.exists():
             user_friendship.delete()
             friend_friendship.delete()
@@ -218,9 +218,9 @@ class FriendViewSet(ModelViewSet):
         data = request.data
 
         uid = data.get('uid')
-        friendId = data.get('friendId')
+        friend_id = data.get('friendId')
 
-        friend = Friend.objects.filter(user_id=uid, related_person=friendId, relation_id=2)
+        friend = Friend.objects.filter(user_id=uid, related_person=friend_id, relation_id=2)
         if friend.exists():
             friend.update(relation=1)
             return Response({
