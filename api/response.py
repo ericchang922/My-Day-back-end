@@ -17,8 +17,8 @@ def not_found(message='不存在'):
     return Response({'response': False, 'message': message}, status=status.HTTP_404_NOT_FOUND)
 
 
-def no_authority():
-    return Response({'response': False, 'message': '沒有權限'}, status=status.HTTP_403_FORBIDDEN)
+def no_authority(authority=''):
+    return Response({'response': False, 'message': f'沒有{authority}權限'}, status=status.HTTP_403_FORBIDDEN)
 
 
 # vote
