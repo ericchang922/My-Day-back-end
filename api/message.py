@@ -32,18 +32,53 @@ class Msg:
             member_read = '群組資料讀取錯誤'
 
     class NotFound:
+        type = ''
+        # account
+        account = '查無使用者'
+        verification_code = '驗證碼不正確'
+
+        # timetable
+        timetable = '課表不存在'
+        personal_timetable = '用戶沒有此課表'
+        class_time = '沒有課程時間'
+        section = '沒有節次'
+        subject = '沒有科目'
+        school = '不存在的學校'
+        share_log = '查無分享紀錄'
+
+        # friend
+        friend = '無此好友'
+        relation = '不存在的關係代碼'
+
+        # group
+        group = '群組不存在'
+        not_in_group = '用戶沒有此群組'  # group_member
+        member_status = '不存在的狀態碼'
+        group_log = '群組沒有紀錄'
+        do_type = '不存在的行為類別'
+
+        # note
+        note = '筆記不存在'
+        user_note = '用戶沒有此筆記'
+
+        # setting
+        notice = '找不到通知設定'
+        theme = '找不到的主題'
+
+        # vote
+        vote = '沒有此投票'
+        user_vote = '用戶沒有此投票'
+        vote_option = '沒有此選項'
+        option_type = '不存在的投票類別'
+        vote_record = '沒有投票紀錄'
+
         # schedule
         schedule = '行程不存在'
         personal_schedule = '用戶沒有此行程'
         no_personal_schedule = '用戶沒有行程'
         common_schedule = '共同行程不存在'
         schedule_notice = '提醒不存在'
-        # note
-        note = '筆記不存在'
-        user_note = '用戶沒有此筆記'
-        # vote
-        vote = '沒有此投票'
-        user_vote = '用戶沒有此投票'
-        # group
-        group = '群組不存在'
-        not_in_group = '用戶沒有此群組'
+
+        # study_plan
+        study_plan = '學習計畫不存在'
+        plan_content = '學習計畫沒有此內容'
