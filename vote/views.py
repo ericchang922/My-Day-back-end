@@ -109,7 +109,7 @@ class VoteViewSet(ModelViewSet):
             if len(group_member) <= 0:
                 return not_found(Msg.NotFound.not_in_group)
             else:
-                return no_authority()
+                return no_authority('編輯投票')
 
         if title is not None and title != vote.title:
             vote.title = title
@@ -176,7 +176,7 @@ class VoteViewSet(ModelViewSet):
             except:
                 return err(Msg.Err.Group.member_read)
             if len(group_member) > 0:
-                return no_authority('群組')
+                return no_authority('刪除投票')
             else:
                 return not_found(Msg.NotFound.user_vote)
 
@@ -449,7 +449,7 @@ class VoteViewSet(ModelViewSet):
                     {
                         'title': i.title,
                         'result': result,
-                        'resultCont': result_count
+                        'resultCount': result_count
                     }
                 )
 
