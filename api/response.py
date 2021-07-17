@@ -46,3 +46,8 @@ def vote_option_exist(message=''):
 
 def vote_expired():
     return Response({'response': False, 'message': '投票已過期'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# note
+def note_is_connect():
+    return Response({'response': False, 'message': '筆記已經與讀書計畫綁定，請先解除綁定'}, status=status.HTTP_400_BAD_REQUEST)

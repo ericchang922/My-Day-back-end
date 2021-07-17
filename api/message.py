@@ -11,6 +11,11 @@ class Msg:
             notice_create = '建立提醒錯誤'
             notice_delete = '提醒刪除錯誤'
 
+        class Note:
+            create = '建立筆記錯誤'
+            select = '查詢筆記錯誤'
+            delete = '刪除筆記錯誤'
+
         class Vote:
             create = '建立投票錯誤'
             select = '查詢投票錯誤'
