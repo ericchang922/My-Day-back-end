@@ -8,9 +8,8 @@ from api.models import Note, GroupMember, Group
 from api.response import *
 
 
-# Create your views here.
 class NoteViewSet(ModelViewSet):
-    queryset = Note.objects.all()
+    queryset = Note.objects.filter(serial_no=0)
     serializer_class = NoteSerializer
 
     # /note/create_new/  -----------------------------------------------------------------------------------------------

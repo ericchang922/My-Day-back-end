@@ -13,7 +13,7 @@ from api.response import *
 
 
 class VoteViewSet(ModelViewSet):
-    queryset = Vote.objects.all()
+    queryset = Vote.objects.filter(serial_no=0)
     serializer_class = VoteSerializer
 
     # /vote/create_new/  -----------------------------------------------------------------------------------------------

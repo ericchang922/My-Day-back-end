@@ -13,7 +13,7 @@ from api.response import *
 
 
 class ScheduleViewSet(ModelViewSet):
-    queryset = Schedule.objects.all()
+    queryset = Schedule.objects.filter(serial_no=0)
     serializer_class = ScheduleSerializer
 
     # /schedule/create_new/  ------------------------------------------------------------------------------------------A
