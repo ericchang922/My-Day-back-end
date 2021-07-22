@@ -10,9 +10,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from api.models import Account, Group, GroupMember, GroupList, GroupInviteList, GetGroup, GetGroupNoVote, GroupLog, \
-    Friend, Schedule
-from group.serializers import GroupSerializer, CreateGroupRequestSerializer
+from api.models import Account, Group, GroupMember, GroupList, GroupInviteList, GroupVote, GroupLog, \
+    Friend, GroupScheduleTime
+from group.functions import new_group_request
+from group.serializers import GroupSerializer
+
 
 # Create your views here.
 class GroupViewSet(ModelViewSet):
@@ -22,32 +24,13 @@ class GroupViewSet(ModelViewSet):
     @action(detail=False, methods=['POST'])
     def create_group(self, request):
         data = request.data
+        data['is_temporary_group'] = 0
 
-        if not Account.objects.filter(user_id=data['founder']).exists():
+        result = new_group_request(data)
+        if result == -1:
             return Response({'response': False, 'message': '帳號不存在'})
-
-        serializer = CreateGroupRequestSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
-
-        friends = serializer.validated_data.pop('friend')
-        founder = serializer.validated_data['founder']
-
-        for friend in friends:
-            if not Friend.objects.filter(user_id=founder, related_person=friend['friendId'],
-                                         relation_id__in=[1, 2]).exists():
-                return Response({'response': False, 'message': '僅能邀請好友'})
-
-        group = serializer.save()
-        group_members = [
-            GroupMember(user=founder, group_no=group, status_id=4, inviter_id=founder.user_id)
-        ]
-
-        for friend in friends:
-            user = Account.objects.get(pk=friend['friendId'])
-            group_member = GroupMember(user=user, group_no=group, status_id=2, inviter_id=founder.user_id)
-            group_members.append(group_member)
-        GroupMember.objects.bulk_create(group_members)
-
+        elif result == -2:
+            return Response({'response': False, 'message': '僅能邀請好友'})
         return Response({
             'response': True,
             'message': '成功'
@@ -96,28 +79,31 @@ class GroupViewSet(ModelViewSet):
         uid = data.get('uid')
         friend_id = data.get('friendId')
         group_num = data.get('groupNum')
+
         try:
             user_in_account = Account.objects.get(user_id=uid)
             friend_in_account = Account.objects.get(user_id=friend_id)
             group_num = Group.objects.get(pk=group_num)
 
-            friendship = Friend.objects.filter(user_id=uid, related_person=friend_id, relation_id__in=[1, 2])
             group_manager = GroupMember.objects.filter(group_no=group_num, user_id=uid, status_id=4)
-            if friendship.exists() and group_manager.exists():
+            friendship = Friend.objects.filter(user_id=uid, related_person=friend_id, relation_id__in=[1, 2])
+
+            if group_manager.exists() and friendship.exists():
                 GroupMember.objects.create(group_no=group_num, user_id=friend_id, status_id=2, inviter_id=uid)
                 return Response({
                     'response': True,
                     'message': '成功'
                 })
-            elif group_manager.exists():
+            elif not friendship.exists():
                 return Response({
                     'response': False,
                     'message': '僅能邀請好友'
                 })
-            return Response({
-                'response': False,
-                'message': '您非此群組管理者，無法邀請朋友'
-            })
+            else:
+                return Response({
+                    'response': False,
+                    'message': '您非此群組管理者，無法邀請朋友'
+                })
         except IntegrityError:
             return Response({
                 'response': False,
@@ -176,7 +162,7 @@ class GroupViewSet(ModelViewSet):
         data = request.query_params
 
         uid = data.get('uid')
-        group = GroupList.objects.filter(user_id=uid, status_id__in=[1,4], is_temporary_group=0)
+        group = GroupList.objects.filter(user_id=uid, status_id__in=[1, 4], is_temporary_group=0)
 
         return Response({
             'groupContent': [
@@ -196,28 +182,32 @@ class GroupViewSet(ModelViewSet):
 
         uid = data.get('uid')
         group_num = data.get('groupNum')
-        group = GroupMember.objects.filter(user_id=uid, group_no=group_num, status_id__in=[1, 4])
-        get_group = GetGroup.objects.filter(user_id=uid, group_no=group_num, status_id__in=[1, 4])
-        group_has_vote = 1 if get_group.count() > 0 else 0
 
-        if group.count() == 0:
+        group = GroupScheduleTime.objects.filter(serial_no=group_num, end_time__gte=datetime.now())
+        group_member = GroupMember.objects.filter(user_id=uid, group_no=group_num, status_id__in=[1, 4])
+
+        if not group.exists():
+            return Response({
+                'response': False,
+                'message': '群組不存在'
+            })
+        elif not group_member.exists():
             return Response({
                 'response': False,
                 'message': '您不屬於此群組'
             })
-        elif get_group.count() == 0:
-            get_group = GetGroupNoVote.objects.filter(user_id=uid, group_no=group_num, status_id__in=[1, 4])
 
+        group_vote = GroupVote.objects.filter(user_id=uid, group_no=group_num, status_id__in=[1, 4])
         return Response({
-            'title': get_group.first().group_name,
-            'typeId': get_group.first().type_id,
+            'title': group.first().group_name,
+            'typeId': group.first().type_id,
             'vote': [
                 {
                     'title': g.title,
-                    'voteNum': g.votenum,
-                    'isVoteType': g.votetype,
+                    'voteNum': g.vote_num,
+                    'isVoteType': bool(g.vote_type),
                 }
-                for g in get_group if group_has_vote
+                for g in group_vote
             ]
         })
 
@@ -228,7 +218,7 @@ class GroupViewSet(ModelViewSet):
         uid = data.get('uid')
         group_num = data.get('groupNum')
         user_in_group = GroupMember.objects.filter(user_id=uid, group_no=group_num, status_id__in=[1, 4])
-        if user_in_group.count() > 0:
+        if user_in_group.exists():
             group = GroupList.objects.filter(group_no=group_num)
             return Response({
                 'founderPhoto': base64.b64encode(group.first().founder_photo),
@@ -253,7 +243,7 @@ class GroupViewSet(ModelViewSet):
         data = request.query_params
 
         uid = data.get('uid')
-        gr = GroupInviteList.objects.filter(user_id=uid,status_id=2, is_temporary_group=0)
+        group = GroupInviteList.objects.filter(user_id=uid, status_id=2, is_temporary_group=0)
 
         return Response({
             'groupContent': [
@@ -264,36 +254,36 @@ class GroupViewSet(ModelViewSet):
                     'inviterPhoto': base64.b64encode(g.inviter_photo),
                     'inviterName': g.inviter_name,
                 }
-                for g in gr
+                for g in group
             ]
         })
 
-    @action(detail=False, methods=['Delete'])
+    @action(detail=False, methods=['DELETE'])
     def quit_group(self, request):
         data = request.data
 
         uid = data.get('uid')
         group_num = data.get('groupNum')
 
-        user_in_group = GroupMember.objects.filter(user_id=uid, group_no=group_num)
+        user_in_group = GroupMember.objects.filter(user_id=uid, group_no=group_num, status_id__in=[1, 4])
         group_manager = GroupMember.objects.filter(group_no=group_num, status_id=4)
         group_member = GroupMember.objects.filter(group_no=group_num, status_id__in=[1, 2])
 
-        if user_in_group.exists():
-            if user_in_group.first().status_id == 4 and group_manager.count() == 1 and group_member.count() > 0:
-                return Response({
-                    'response': False,
-                    'message': '您是唯一管理者，需先指定另一位管理者才能退出'
-                })
-            else:
-                user_in_group.delete()
-                return Response({
-                    'response': True,
-                    'message': '退出成功'
-                })
+        if not user_in_group.exists():
+            return Response({
+                'response': False,
+                'message': '已不是此群組的成員'
+            })
+        elif user_in_group.first().status_id == 4 and group_manager.count() == 1 and group_member.count() > 0:
+            return Response({
+                'response': False,
+                'message': '您是唯一管理者，需先指定另一位管理者才能退出'
+            })
+
+        user_in_group.delete()
         return Response({
-            'response': False,
-            'message': '您已不是此群組的成員'
+            'response': True,
+            'message': '退出成功'
         })
 
     @action(detail=False, methods=['PATCH'])
@@ -322,21 +312,19 @@ class GroupViewSet(ModelViewSet):
 
         user_is_manager = GroupMember.objects.filter(user_id=uid, group_no=group_num, status_id=4)
         group_member = GroupMember.objects.filter(user_id=friend_id, group_no=group_num)
-        if user_is_manager.exists():
-            if group_member.exists():
-                group_member.update(status_id=status_id)
-                return Response({
-                    'response': True,
-                    'message':'成功'
-                })
-            else:
-                return Response({
-                    'response': False,
-                    'message': '此人不是群組成員'
-                })
+        if user_is_manager.exists() and group_member.exists():
+            group_member.update(status_id=status_id)
+            return Response({
+                'response': True,
+                'message': '成功'
+            })
+        elif not group_member.exists():
+            return Response({
+                'response': False,
+                'message': '此人不是群組成員'
+            })
         else:
             return Response({
                 'response': False,
                 'message': '非群組管理者，無法設定'
             })
-
