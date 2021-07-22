@@ -84,7 +84,7 @@ class GetFriend(models.Model):
         db_table = 'get_friend'
         unique_together = ('user_id', 'related_person')
 
-class GetGroup(models.Model):
+class GroupVote(models.Model):
     user_id = models.CharField(max_length=255)
     status_id = models.IntegerField()
     group_no = models.IntegerField()
@@ -92,13 +92,13 @@ class GetGroup(models.Model):
     is_temporary_group = models.IntegerField()
     type_id = models.IntegerField(blank=True, null=True)
     title = models.CharField(max_length=255)
-    votenum = models.IntegerField(primary_key=True)
-    votetype = models.BigIntegerField(db_column='VoteType')  # Field name made lowercase.
+    vote_num = models.IntegerField(primary_key=True)
+    vote_type = models.BigIntegerField()
 
     class Meta:
         managed = False  # Created from a view. Don't remove.
-        db_table = 'get_group'
-        unique_together = ('user_id', 'group_no','votenum')
+        db_table = 'group_vote'
+        unique_together = ('user_id', 'group_no','vote_num')
 
 class GetStudyplan(models.Model):
     create_id = models.CharField(max_length=255, blank=True, null=True)
@@ -147,6 +147,20 @@ class Group(models.Model):
     class Meta:
         managed = False
         db_table = 'group'
+
+
+class GroupScheduleTime(models.Model):
+    serial_no = models.IntegerField(primary_key=True)
+    group_name = models.CharField(max_length=255, db_collation='utf8_general_ci', blank=True, null=True)
+    founder = models.CharField(max_length=255, db_collation='utf8_general_ci', blank=True, null=True)
+    type_id = models.IntegerField(blank=True, null=True)
+    found_time = models.DateTimeField(blank=True, null=True)
+    is_temporary_group = models.IntegerField(blank=True, null=True)
+    end_time = models.CharField(max_length=19, db_collation='utf8mb4_0900_ai_ci', blank=True, null=True)
+
+    class Meta:
+        managed = False  # Created from a view. Don't remove.
+        db_table = 'group_schedule_time'
 
 class GroupInviteList(models.Model):
     group_no = models.IntegerField(primary_key=True)
@@ -418,8 +432,8 @@ class TemporaryList(models.Model):
     status_id = models.IntegerField()
     type_id = models.IntegerField(blank=True, null=True)
     group_name = models.CharField(max_length=255)
-    starttime = models.DateTimeField(db_column='startTime')  # Field name made lowercase.
-    endtime = models.DateTimeField(db_column='endTime', blank=True, null=True)  # Field name made lowercase.
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField(blank=True, null=True)
     cnt = models.BigIntegerField()
     is_temporary_group = models.IntegerField()
 
