@@ -48,8 +48,8 @@ class TemporaryGroupViewSet(ModelViewSet):
         data = request.query_params
 
         uid = data.get('uid')
-        tg = TemporaryList.objects.filter(user_id=uid,status_id__in=[1,4],
-                                          is_temporary_group=1, endtime__gte=datetime.now())
+        tmp_group = TemporaryList.objects.filter(user_id=uid, status_id__in=[1, 4],
+                                                 is_temporary_group=1, end_time__gte=datetime.now())
 
         return Response({
             'temporaryContent': [
@@ -57,11 +57,11 @@ class TemporaryGroupViewSet(ModelViewSet):
                     'groupId': g.group_no,
                     'typeId': g.type_id,
                     'title': g.group_name,
-                    'startTime': g.starttime,
-                    'endTime': g.endtime,
+                    'startTime': g.start_time,
+                    'endTime': g.end_time,
                     'peopleCount': g.cnt,
                 }
-                for g in tg
+                for g in tmp_group
             ]
         })
 
@@ -71,7 +71,7 @@ class TemporaryGroupViewSet(ModelViewSet):
 
         uid = data.get('uid')
         tmp_group = TemporaryList.objects.filter(user_id=uid, status_id=2,
-                                                is_temporary_group=1, endtime__gte=datetime.now())
+                                                 is_temporary_group=1, end_time__gte=datetime.now())
 
         return Response({
             'temporaryContent': [
