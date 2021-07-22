@@ -24,32 +24,13 @@ class GroupViewSet(ModelViewSet):
     @action(detail=False, methods=['POST'])
     def create_group(self, request):
         data = request.data
+        data['is_temporary_group'] = 0
 
-        if not Account.objects.filter(user_id=data['founder']).exists():
+        result = new_group_request(data)
+        if result == -1:
             return Response({'response': False, 'message': '帳號不存在'})
-
-        serializer = CreateGroupRequestSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
-
-        friends = serializer.validated_data.pop('friend')
-        founder = serializer.validated_data['founder']
-
-        for friend in friends:
-            if not Friend.objects.filter(user_id=founder, related_person=friend['friendId'],
-                                         relation_id__in=[1, 2]).exists():
-                return Response({'response': False, 'message': '僅能邀請好友'})
-
-        group = serializer.save()
-        group_members = [
-            GroupMember(user=founder, group_no=group, status_id=4, inviter_id=founder.user_id)
-        ]
-
-        for friend in friends:
-            user = Account.objects.get(pk=friend['friendId'])
-            group_member = GroupMember(user=user, group_no=group, status_id=2, inviter_id=founder.user_id)
-            group_members.append(group_member)
-        GroupMember.objects.bulk_create(group_members)
-
+        elif result == -2:
+            return Response({'response': False, 'message': '僅能邀請好友'})
         return Response({
             'response': True,
             'message': '成功'
