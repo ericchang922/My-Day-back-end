@@ -79,8 +79,8 @@ class TemporaryGroupViewSet(ModelViewSet):
                     'groupId': g.group_no,
                     'typeId': g.type_id,
                     'title': g.group_name,
-                    'startTime': g.starttime,
-                    'endTime': g.endtime,
+                    'startTime': g.start_time,
+                    'endTime': g.end_time,
                     'peopleCount': g.cnt,
                 }
                 for g in tmp_group
@@ -88,45 +88,13 @@ class TemporaryGroupViewSet(ModelViewSet):
         })
 
     @action(detail=False)
-    def get(self, request):
-        data = request.query_params
-
-        uid = data.get('uid')
-        groupNum = data.get('groupNum')
-
-        group = GroupMember.objects.filter(user_id=uid, group_no=groupNum, status_id__in=[1, 4])
-        get_group = GetGroup.objects.filter(user_id=uid, group_no=groupNum, status_id__in=[1, 4])
-        group_has_vote = 1 if get_group.count() > 0 else 0
-
-        if group.count() == 0:
-            return Response({
-                'response': False,
-                'message': '您不屬於此群組'
-            })
-        elif get_group.count() == 0:
-            get_group = GetGroupNoVote.objects.filter(user_id=uid, group_no=groupNum, status_id__in=[1, 4])
-
-        return Response({
-            'title': get_group.first().group_name,
-            'typeId': get_group.first().type_id,
-            'vote': [
-                {
-                    'title': g.title,
-                    'voteNum': g.votenum,
-                    'isVoteType': g.votetype,
-                }
-                for g in get_group if group_has_vote
-            ]
-        })
-
-    @action(detail=False)
     def get_invite(self, request):
         data = request.query_params
 
-        groupNum = data.get('groupNum')
-        tmp_group_invite = GetTemporaryInvite.objects.filter(group_no=groupNum)
+        group_num = data.get('groupNum')
+        tmp_group_invite = GetTemporaryInvite.objects.filter(group_no=group_num)
 
-        if tmp_group_invite.count() > 0:
+        if tmp_group_invite.exists():
             return Response({
                 'title': tmp_group_invite.first().group_name,
                 'startTime': tmp_group_invite.first().found_time,
