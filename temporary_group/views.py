@@ -5,9 +5,9 @@ from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 
-from temporary_group.serializers import ScheduleSerializer
-from api.models import Schedule, Group, TemporaryList, GetGroup, GetTemporaryInvite, GetGroupNoVote, GroupMember, \
-    GroupLog
+from group.views import new_group_request
+from temporary_group.serializers import ScheduleSerializer, CreateTmpGroupRequestSerializer
+from api.models import Schedule, TemporaryList, GetTemporaryInvite, PersonalSchedule
 
 
 # Create your views here.
@@ -16,31 +16,39 @@ class TemporaryGroupViewSet(ModelViewSet):
     serializer_class = ScheduleSerializer
 
     @action(detail=False, methods=['POST'])
-    def create_schedule(self, request):
+    def create_group(self, request):
         data = request.data
 
-        uid = data.get('uid')
-        groupNum = data.get('groupNum')
-        title = data.get('title')
-        startTime = data.get('startTime')
-        endTime = data.get('endTime')
-        typeId = data.get('typeId')
+        serializer = CreateTmpGroupRequestSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
 
-        group_member = GroupMember.objects.filter(group_no=groupNum, user_id=uid, status_id__in=[1, 4])
-        if group_member.exists():
-            groupNum = Group.objects.get(serial_no=groupNum)
-            Schedule.objects.create(connect_group_no=groupNum,schedule_name=title,
-                                    schedule_start=startTime,schedule_end=endTime,
-                                    type_id=typeId)
-            GroupLog.objects.create(do_time=datetime.now(), group_no=groupNum,user_id=uid,
-                                    trigger_type='I', do_type_id=3)
-            return Response({
-                'response': True,
-                'message': '成功'
-            })
+        schedule_start_time = serializer.validated_data.pop('scheduleStartTime')
+        schedule_end_time = serializer.validated_data.pop('scheduleEndTime')
+        if schedule_start_time > schedule_end_time:
+            return Response({'response': False, 'message': '開始時間需小於結束時間'})
+
+        place = serializer.validated_data.pop('place')
+        serializer.validated_data.update({'is_temporary_group': 1})
+
+        result = new_group_request(serializer.validated_data)
+        if result == -1:
+            return Response({'response': False, 'message': '帳號不存在'})
+        elif result == -2:
+            return Response({'response': False, 'message': '僅能邀請好友'})
+
+        group = result
+        schedule_name = serializer.validated_data['group_name']
+        type_id = serializer.validated_data['type']
+        founder = serializer.validated_data['founder']
+        schedule = Schedule.objects.create(schedule_name=schedule_name, connect_group_no=group,
+                                           type_id=type_id, schedule_start=schedule_start_time,
+                                           schedule_end=schedule_end_time, place=place)
+
+        PersonalSchedule.objects.create(user_id=founder, schedule_no=schedule, is_notice=0,
+                                        is_countdown=0, is_hidden=0)
         return Response({
-            'response': False,
-            'message': '非群組成員，故無法建立'
+            'response': True,
+            'message': '成功'
         })
 
     @action(detail=False)
