@@ -60,7 +60,7 @@ class GroupViewSet(ModelViewSet):
             group.save()
 
             GroupLog.objects.create(do_time=datetime.now(), group_no=group, user_id=uid,
-                                    trigger_type='U', do_type_id=1)
+                                    trigger_type='U', do_type_id=1, new='編輯群組資訊')
 
             return Response({
                 'response': True,
