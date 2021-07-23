@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from api.models import Account, Group, GroupMember, GroupList, GroupInviteList, GroupVote, GroupLog, \
-    Friend, GroupScheduleTime
+    Friend, GroupScheduleTime, FriendList, GroupLogDetail
 from group.functions import new_group_request
 from group.serializers import GroupSerializer
 
@@ -60,7 +60,7 @@ class GroupViewSet(ModelViewSet):
             group.save()
 
             GroupLog.objects.create(do_time=datetime.now(), group_no=group, user_id=uid,
-                                    trigger_type='U', do_type_id=1)
+                                    trigger_type='U', do_type_id=1, new='編輯群組資訊')
 
             return Response({
                 'response': True,
@@ -223,10 +223,12 @@ class GroupViewSet(ModelViewSet):
             return Response({
                 'founderPhoto': base64.b64encode(group.first().founder_photo),
                 'founderName': group.first().founder_name,
+                'founderId': group.first().founder,
                 'member': [
                     {
                         'memberPhoto': base64.b64encode(g.member_photo),
                         'memberName': g.name,
+                        'memberId': g.user_id,
                         'statusId': g.status_id,
                     }
                     for g in group
@@ -237,6 +239,36 @@ class GroupViewSet(ModelViewSet):
                 'response': False,
                 'message': '您不屬於此群組'
             })
+
+    @action(detail=False)
+    def invite_friend_list(self, request):
+        data = request.query_params
+
+        uid = data.get('uid')
+        group_num = data.get('groupNum')
+        friend_status_id = int(data.get('friendStatusId'))
+        if friend_status_id not in [1, 2]:
+            return Response({'response':False, 'message':'狀態編號錯誤'})
+
+        user_in_group = GroupMember.objects.filter(user_id=uid, group_no=group_num, status_id__in=[1, 4])
+
+        if user_in_group.exists():
+            group_member = GroupMember.objects.filter(group_no=group_num)
+            friend = FriendList.objects.filter(user_id=uid, relation_id=friend_status_id)\
+                .exclude(related_person__in=group_member.values_list('user_id'))
+
+            return Response({
+                'friend': [
+                    {
+                        'photo': base64.b64encode(g.photo),
+                        'friendId': g.related_person,
+                        'friendName': g.name
+                    }
+                    for g in friend
+                ]
+            })
+        else:
+            return Response({'response':False, 'message':'你不是群組成員'})
 
     @action(detail=False)
     def invite_list(self, request):
@@ -328,3 +360,28 @@ class GroupViewSet(ModelViewSet):
                 'response': False,
                 'message': '非群組管理者，無法設定'
             })
+
+    @action(detail=False)
+    def get_log(self, request):
+        data = request.query_params
+
+        uid = data.get('uid')
+        group_num = data.get('groupNum')
+
+        group = GroupScheduleTime.objects.filter(serial_no=group_num, end_time__gte=datetime.now())
+        user_in_group = GroupMember.objects.filter(group_no=group_num, user_id=uid, status_id__in=[1, 4])
+        if group.exists() and user_in_group.exists():
+            group_log = GroupLogDetail.objects.filter(group_no=group_num)
+            return Response({
+                'groupContent':
+                    [
+                        {
+                            'doTime': g.do_time,
+                            'name': g.name,
+                            'logContent': g.content
+                        }
+                        for g in group_log
+                    ]
+            })
+        else:
+            return Response({'response': False, 'message': '沒有群組紀錄'})

@@ -200,6 +200,7 @@ class GroupList(models.Model):
 
 
 class GroupLog(models.Model):
+    serial_no = models.AutoField(primary_key=True)
     do_time = models.DateTimeField(blank=True, null=True)
     group_no = models.ForeignKey(Group, models.DO_NOTHING, db_column='group_no', blank=True, null=True)
     user = models.ForeignKey(Account, models.DO_NOTHING, blank=True, null=True)
@@ -211,6 +212,23 @@ class GroupLog(models.Model):
     class Meta:
         managed = False
         db_table = 'group_log'
+
+
+class GroupLogDetail(models.Model):
+    serial_no = models.IntegerField(primary_key=True)
+    do_time = models.DateTimeField(blank=True, null=True)
+    group_no = models.IntegerField(blank=True, null=True)
+    user_id = models.CharField(max_length=255, db_collation='utf8_general_ci', blank=True, null=True)
+    name = models.CharField(max_length=255, db_collation='utf8_general_ci', blank=True, null=True)
+    photo = models.TextField(blank=True, null=True)
+    trigger_type = models.CharField(max_length=1, db_collation='utf8_general_ci', blank=True, null=True)
+    do_type_id = models.IntegerField(blank=True, null=True)
+    old = models.CharField(max_length=255, db_collation='utf8_general_ci', blank=True, null=True)
+    content = models.CharField(max_length=255, db_collation='utf8_general_ci', blank=True, null=True)
+
+    class Meta:
+        managed = False  # Created from a view. Don't remove.
+        db_table = 'group_log_detail'
 
 
 class GroupMember(models.Model):
