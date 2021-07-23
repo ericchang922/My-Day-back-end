@@ -21,6 +21,8 @@ from note import views as note_views
 from vote import views as vote_views
 # setting
 from setting import views as setting_views
+# profile
+from user_profile import views as profile_views
 
 router = DefaultRouter()
 router.register('friend', friend_views.FriendViewSet)
@@ -38,6 +40,8 @@ router.register('note', note_views.NoteViewSet)
 router.register('vote', vote_views.VoteViewSet)
 # setting
 router.register('setting', setting_views.SettingViewSet)
+# profile
+router.register('profile', profile_views.ProfileViewSet)
 
 
 urlpatterns = [
