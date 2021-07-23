@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from api.models import Account, Group, GroupMember, GroupList, GroupInviteList, GroupVote, GroupLog, \
-    Friend, GroupScheduleTime
+    Friend, GroupScheduleTime, FriendList, GroupLogDetail
 from group.functions import new_group_request
 from group.serializers import GroupSerializer
 
@@ -328,3 +328,28 @@ class GroupViewSet(ModelViewSet):
                 'response': False,
                 'message': '非群組管理者，無法設定'
             })
+
+    @action(detail=False)
+    def get_log(self, request):
+        data = request.query_params
+
+        uid = data.get('uid')
+        group_num = data.get('groupNum')
+
+        group = GroupScheduleTime.objects.filter(serial_no=group_num, end_time__gte=datetime.now())
+        user_in_group = GroupMember.objects.filter(group_no=group_num, user_id=uid, status_id__in=[1, 4])
+        if group.exists() and user_in_group.exists():
+            group_log = GroupLogDetail.objects.filter(group_no=group_num)
+            return Response({
+                'groupContent':
+                    [
+                        {
+                            'doTime': g.do_time,
+                            'name': g.name,
+                            'logContent': g.content
+                        }
+                        for g in group_log
+                    ]
+            })
+        else:
+            return Response({'response': False, 'message': '沒有群組紀錄'})
