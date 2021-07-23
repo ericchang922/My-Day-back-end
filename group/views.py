@@ -239,6 +239,36 @@ class GroupViewSet(ModelViewSet):
             })
 
     @action(detail=False)
+    def invite_friend_list(self, request):
+        data = request.query_params
+
+        uid = data.get('uid')
+        group_num = data.get('groupNum')
+        friend_status_id = int(data.get('friendStatusId'))
+        if friend_status_id not in [1, 2]:
+            return Response({'response':False, 'message':'狀態編號錯誤'})
+
+        user_in_group = GroupMember.objects.filter(user_id=uid, group_no=group_num, status_id__in=[1, 4])
+
+        if user_in_group.exists():
+            group_member = GroupMember.objects.filter(group_no=group_num)
+            friend = FriendList.objects.filter(user_id=uid, relation_id=friend_status_id)\
+                .exclude(related_person__in=group_member.values_list('user_id'))
+
+            return Response({
+                'friend': [
+                    {
+                        'photo': base64.b64encode(g.photo),
+                        'friendId': g.related_person,
+                        'friendName': g.name
+                    }
+                    for g in friend
+                ]
+            })
+        else:
+            return Response({'response':False, 'message':'你不是群組成員'})
+
+    @action(detail=False)
     def invite_list(self, request):
         data = request.query_params
 
