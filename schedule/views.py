@@ -396,8 +396,17 @@ class ScheduleViewSet(ModelViewSet):
             print(e)
             return err(Msg.Err.Schedule.select, 'SC-H-002')  # ----------------------------------------------------002
 
-        schedule_list = []
+        past_list = []
+        future_list = []
+        now = datetime.now()
         for i in schedule:
+            if i.schedule_end < now:
+                schedule_list = past_list
+                print('past')
+            else:
+                schedule_list = future_list
+                print('future')
+
             schedule_list.append(
                 {
                     'scheduleNum': int(i.serial_no),
@@ -408,7 +417,10 @@ class ScheduleViewSet(ModelViewSet):
                 }
             )
 
-        response = {'schedule': schedule_list}
+        response = {
+            'pastSchedule': past_list,
+            'futureSchedule': future_list
+        }
         return success(response)
 
     # /schedule/common_hidden/  ---------------------------------------------------------------------------------------I
