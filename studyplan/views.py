@@ -118,7 +118,7 @@ class StudyPlanViewSet(ModelViewSet):
             schedule.save()
             if schedule.connect_group_no:
                 GroupLog.objects.create(do_time=datetime.now(), group_no=schedule.connect_group_no, user_id=uid,
-                                        trigger_type='U', do_type_id=4)
+                                        trigger_type='U', do_type_id=4, new='編輯讀書計畫')
 
             return Response({
                 'response': True,
@@ -151,7 +151,7 @@ class StudyPlanViewSet(ModelViewSet):
                 schedule.connect_group_no = group_num
                 schedule.save()
                 GroupLog.objects.create(do_time=datetime.now(), group_no=group_num, user_id=uid,
-                                        trigger_type='I', do_type_id=4)
+                                        trigger_type='I', do_type_id=4, new='分享讀書計畫')
                 return Response({
                     'response': True,
                     'message': '成功'
@@ -190,7 +190,7 @@ class StudyPlanViewSet(ModelViewSet):
             schedule = Schedule.objects.get(pk=schedule_no)
             if schedule.connect_group_no:
                 GroupLog.objects.create(do_time=datetime.now(), group_no=schedule.connect_group_no, user_id=uid,
-                                        trigger_type='D', do_type_id=4)
+                                        trigger_type='D', do_type_id=4, new='取消分享讀書計畫')
                 schedule.connect_group_no = None
                 schedule.save()
                 return Response({
