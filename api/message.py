@@ -35,6 +35,8 @@ class Msg:
             select = '查詢群組錯誤'
             # group_member
             member_read = '群組資料讀取錯誤'
+            # group_log
+            log_create = '新增群組紀錄錯誤'
 
     class NotFound:
         type = ''

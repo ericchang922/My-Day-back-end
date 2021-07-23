@@ -7,7 +7,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 # my day
 from schedule.serializers import ScheduleSerializer
-from api.models import Schedule, ScheduleNotice, PersonalSchedule, Type, GroupMember, Group
+from api.models import Schedule, ScheduleNotice, PersonalSchedule, Type, GroupMember, Group, GroupLog
 # schedule
 from api.response import *
 
@@ -62,6 +62,10 @@ class ScheduleViewSet(ModelViewSet):
 
         uid = data['uid']
         schedule_no = data['scheduleNum']
+        is_connect = False
+        is_edit_schedule = False
+        is_edit_title = False
+        old = None
         try:
             schedule = Schedule.objects.get(serial_no=schedule_no)
         except ObjectDoesNotExist:
@@ -70,15 +74,18 @@ class ScheduleViewSet(ModelViewSet):
             print(e)
             return err(Msg.Err.Schedule.select, 'SC-B-001')  # ----------------------------------------------------001
 
+        group_no = schedule.connect_group_no.serial_no if schedule.connect_group_no is not None else None
+        if group_no is not None:
+            is_connect = True
+
         try:
             personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule, user_id=uid)
         except ObjectDoesNotExist:
-            if schedule.connect_group_no is None:
+            if not is_connect:
                 return not_found(Msg.NotFound.personal_schedule)
 
             try:
-                GroupMember.objects.get(group_no=schedule.connect_group_no.serial_no, user_id=uid,
-                                        status__in=[1, 4])
+                GroupMember.objects.get(group_no_id=group_no, user_id=uid, status__in=[1, 4])
             except ObjectDoesNotExist:
                 return not_found(Msg.NotFound.not_in_group)
 
@@ -88,6 +95,7 @@ class ScheduleViewSet(ModelViewSet):
             except Exception as e:
                 print(e)
                 return err(Msg.Err.Schedule.personal_create, 'SC-B-002')  # ---------------------------------------002
+
         except Exception as e:
             print(e)
             return err(Msg.Err.Schedule.personal_select, 'SC-B-003')  # -------------------------------------------003
@@ -130,13 +138,17 @@ class ScheduleViewSet(ModelViewSet):
                         return err(Msg.Err.Schedule.notice_delete, 'SC-B-004')  # ---------------------------------004
 
         if title is not None:
+            old = str(schedule.schedule_name)
             schedule.schedule_name = title
+            is_edit_title = True
 
         if start_time is not None:
             schedule.schedule_start = start_time
+            is_edit_schedule = True
 
         if end_time is not None:
             schedule.schedule_end = end_time
+            is_edit_schedule = True
 
         if remind is not None:
             if is_remind is not None:
@@ -148,18 +160,34 @@ class ScheduleViewSet(ModelViewSet):
 
         if type_id is not None:
             schedule.type_id = type_id
+            is_edit_schedule = True
 
         if is_countdown is not None:
             personal_schedule.is_countdown = is_countdown
 
         if place is not None:
             schedule.place = place
+            is_edit_schedule = True
 
         if remark is not None:
             personal_schedule.remark = remark
 
         schedule.save()
         personal_schedule.save()
+        if is_connect and is_edit_schedule:
+            try:
+                group_log = GroupLog.objects.create(do_time=datetime.now(), group_no_id=group_no, user_id=uid,
+                                                    trigger_type='U', do_type_id=3)
+            except Exception as e:
+                print(e)
+                return err(Msg.Err.Group.log_create, 'SC-B-005')  # -----------------------------------------------005
+            if is_edit_title:
+                group_log.old = f'將行程由 {old} '
+                group_log.new = f'改為 {str(schedule.schedule_name)}'
+            else:
+                group_log.new = f'編輯行程:{str(schedule.schedule_name)} 資訊'
+
+            group_log.save()
 
         return success()
 
@@ -170,27 +198,56 @@ class ScheduleViewSet(ModelViewSet):
 
         uid = data['uid']
         schedule_no = data['scheduleNum']
+        is_connect = False
 
         try:
-            personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule_no, user_id=uid)
+            schedule = Schedule.objects.get(serial_no=schedule_no)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.personal_schedule)
+            return not_found(Msg.NotFound.schedule)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.personal_select, 'SC-C-001')  # -------------------------------------------001
+            return err(Msg.Err.Schedule.select, 'SC-C-001')  # ----------------------------------------------------001
+        group_no = schedule.connect_group_no.serial_no if schedule.connect_group_no is not None else None
+
+        if group_no is not None:
+            is_connect = True
+            try:
+                GroupMember.objects.get(group_no_id=group_no, user_id=uid, status=4)
+            except ObjectDoesNotExist:
+                return no_authority('刪除共同行程')
+            except Exception as e:
+                print(e)
+                return err(Msg.Err.Group.member_read, 'SC-C-002')  # ----------------------------------------------002
 
         try:
-            schedule_notice = ScheduleNotice.objects.filter(personal_schedule_no=personal_schedule)
-            schedule_notice.delete()
+            personal_schedule = PersonalSchedule.objects.filter(schedule_no=schedule_no)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.notice_delete, 'SC-C-002')  # ---------------------------------------------002
+            return err(Msg.Err.Schedule.personal_select, 'SC-C-003')  # -------------------------------------------003
+
+        if len(personal_schedule) <= 0:
+            return not_found(Msg.NotFound.personal_schedule)
+        for i in personal_schedule:
+            try:
+                schedule_notice = ScheduleNotice.objects.filter(personal_schedule_no=i.serial_no)
+                schedule_notice.delete()
+            except Exception as e:
+                print(e)
+                return err(Msg.Err.Schedule.notice_delete, 'SC-C-004')  # -----------------------------------------004
 
         try:
             personal_schedule.delete()
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.personal_delete, 'SC-C-003')  # -------------------------------------------003
+            return err(Msg.Err.Schedule.personal_delete, 'SC-C-005')  # -------------------------------------------005
+
+        if is_connect:
+            try:
+                GroupLog.objects.create(do_time=datetime.now(), group_no_id=group_no, user_id=uid, trigger_type='D',
+                                        do_type_id=3, old=schedule.schedule_name)
+            except Exception as e:
+                print(e)
+                return err(Msg.Err.Group.log_create, 'SC-C-006')  # -----------------------------------------------006
 
         return success()
 
@@ -326,6 +383,12 @@ class ScheduleViewSet(ModelViewSet):
             except Exception as e:
                 print(e)
                 return err(Msg.Err.Schedule.personal_create, 'SC-F-005')  # ---------------------------------------005
+        try:
+            GroupLog.objects.create(do_time=datetime.now(), group_no_id=group_no, user_id=uid, trigger_type='I',
+                                    do_type_id=3, new=title)
+        except Exception as e:
+            print(e)
+            return err(Msg.Err.Group.log_create, 'SC-F-006')  # ---------------------------------------------------006
 
         return success()
 
