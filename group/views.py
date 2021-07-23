@@ -223,10 +223,12 @@ class GroupViewSet(ModelViewSet):
             return Response({
                 'founderPhoto': base64.b64encode(group.first().founder_photo),
                 'founderName': group.first().founder_name,
+                'founderId': group.first().founder,
                 'member': [
                     {
                         'memberPhoto': base64.b64encode(g.member_photo),
                         'memberName': g.name,
+                        'memberId': g.user_id,
                         'statusId': g.status_id,
                     }
                     for g in group
