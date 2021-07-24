@@ -182,10 +182,8 @@ class ScheduleViewSet(ModelViewSet):
                 print(e)
                 return err(Msg.Err.Group.log_create, 'SC-B-005')  # -----------------------------------------------005
             if is_edit_title:
-                group_log.old = f'將行程由 {old} '
-                group_log.new = f'改為 {str(schedule.schedule_name)}'
-            else:
-                group_log.new = f'編輯行程:{str(schedule.schedule_name)} 資訊'
+                group_log.old = old
+                group_log.new = str(schedule.schedule_name)
 
             group_log.save()
 
