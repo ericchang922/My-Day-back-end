@@ -1,9 +1,5 @@
-import base64
-
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
-from django.shortcuts import render
-from rest_framework import status
 from datetime import datetime
 from rest_framework.decorators import action, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -221,12 +217,12 @@ class GroupViewSet(ModelViewSet):
         if user_in_group.exists():
             group = GroupList.objects.filter(group_no=group_num)
             return Response({
-                'founderPhoto': base64.b64encode(group.first().founder_photo),
+                'founderPhoto': group.first().founder_photo,
                 'founderName': group.first().founder_name,
                 'founderId': group.first().founder,
                 'member': [
                     {
-                        'memberPhoto': base64.b64encode(g.member_photo),
+                        'memberPhoto': g.member_photo,
                         'memberName': g.name,
                         'memberId': g.user_id,
                         'statusId': g.status_id,
@@ -260,7 +256,7 @@ class GroupViewSet(ModelViewSet):
             return Response({
                 'friend': [
                     {
-                        'photo': base64.b64encode(g.photo),
+                        'photo': g.photo,
                         'friendId': g.related_person,
                         'friendName': g.name
                     }
@@ -283,7 +279,7 @@ class GroupViewSet(ModelViewSet):
                     'groupId': g.group_no,
                     'title': g.group_name,
                     'typeId': g.type_id,
-                    'inviterPhoto': base64.b64encode(g.inviter_photo),
+                    'inviterPhoto': g.inviter_photo,
                     'inviterName': g.inviter_name,
                 }
                 for g in group
