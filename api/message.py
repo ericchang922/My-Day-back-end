@@ -38,6 +38,9 @@ class Msg:
             # group_log
             log_create = '新增群組紀錄錯誤'
 
+        class Friend:
+            already_sent_request = '已送出邀請'
+            already_best_friend = '已為摯友'
     class NotFound:
         type = ''
         # account
@@ -55,7 +58,10 @@ class Msg:
 
         # friend
         friend = '無此好友'
+        best_friend = '無此摯友'
         relation = '不存在的關係代碼'
+        friend_request = '沒有邀請關係'
+
 
         # group
         group = '群組不存在'
