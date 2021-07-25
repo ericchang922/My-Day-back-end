@@ -92,7 +92,7 @@ class FriendViewSet(ModelViewSet):
                     timetable_no = 0
 
             return Response({
-                'photo': base64.b64encode(friend.first().photo),
+                'photo': friend.first().photo,
                 'friendName': friend.first().name,
                 'timetableId': timetable_no,
             })
@@ -111,7 +111,7 @@ class FriendViewSet(ModelViewSet):
         return Response({
             'friend': [
                 {
-                    'photo': base64.b64encode(f.photo),
+                    'photo': f.photo,
                     'friendId': f.related_person,
                     'friendName': f.name,
                     'relationId': f.relation_id,
@@ -130,7 +130,7 @@ class FriendViewSet(ModelViewSet):
         return Response({
             'friend': [
                 {
-                    'photo': base64.b64encode(f.photo),
+                    'photo': f.photo,
                     'friendId': f.related_person,
                     'friendName': f.name,
                 }
@@ -148,7 +148,7 @@ class FriendViewSet(ModelViewSet):
         return Response({
             'friend': [
                 {
-                    'photo': base64.b64encode(f.photo),
+                    'photo': f.photo,
                     'friendId': f.related_person,
                     'friendName': f.name,
                 }

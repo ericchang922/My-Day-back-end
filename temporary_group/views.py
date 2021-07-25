@@ -1,4 +1,3 @@
-import base64
 from datetime import datetime
 
 from rest_framework.decorators import action
@@ -107,11 +106,11 @@ class TemporaryGroupViewSet(ModelViewSet):
                 'title': tmp_group_invite.first().group_name,
                 'startTime': tmp_group_invite.first().found_time,
                 'endTime': tmp_group_invite.first().schedule_end,
-                'founderPhoto': base64.b64encode(tmp_group_invite.first().founder_photo),
+                'founderPhoto': tmp_group_invite.first().founder_photo,
                 'founderName': tmp_group_invite.first().founder_name,
                 'member': [
                     {
-                        'memberPhoto': base64.b64encode(g.member_photo),
+                        'memberPhoto': g.member_photo,
                         'memberName': g.member_name,
                         'statusId': g.status_id,
                     }
