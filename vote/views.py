@@ -410,7 +410,7 @@ class VoteViewSet(ModelViewSet):
 
         if vote.end_time < datetime.now():
             return vote_expired()
-
+        title = vote.title
         group_no = vote.group_no
         try:
             GroupMember.objects.get(user_id=uid, group_no=group_no, status__in=[1, 4])
@@ -437,11 +437,11 @@ class VoteViewSet(ModelViewSet):
 
         try:
             GroupLog.objects.create(do_time=datetime.now(), group_no_id=group_no, user_id=uid, trigger_type='I',
-                                    do_type_id=6)
+                                    do_type_id=6, new=title)
         except Exception as e:
             print(e)
             err(Msg.Err.Group.log_create, 'VO-G-003')  # ----------------------------------------------------------003
-            
+
         return success()
 
     # /vote/get_end_list/  --------------------------------------------------------------------------------------------H
