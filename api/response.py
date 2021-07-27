@@ -22,10 +22,6 @@ def no_authority(authority=''):
 
 
 # vote
-def option_type_not_exist():
-    return Response({'response': False, 'message': '投票類型不存在'}, status=status.HTTP_412_PRECONDITION_FAILED)
-
-
 def no_item():
     return Response({'response': False, 'message': '至少新增一個選項'}, status=status.HTTP_400_BAD_REQUEST)
 
