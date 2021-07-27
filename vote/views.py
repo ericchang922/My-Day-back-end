@@ -68,6 +68,13 @@ class VoteViewSet(ModelViewSet):
             except:
                 return err(Msg.Err.Vote.option_create + '-no:' + str(i['voteItemNum']), 'VO-A-004')  # ------------004
 
+        try:
+            GroupLog.objects.create(do_time=datetime.now(), group_no_id=group_no, user_id=uid, trigger_type='I',
+                                    do_type_id=5, new=title)
+        except Exception as e:
+            print(e)
+            return err(Msg.Err.Group.log_create, 'VO-A-005')  # ---------------------------------------------------005
+
         return success()
 
     # /vote/edit/  ----------------------------------------------------------------------------------------------------B
@@ -83,6 +90,7 @@ class VoteViewSet(ModelViewSet):
         is_add_item_permit = data['isAddItemPermit']
         is_anonymous = data['isAnonymous']
         multiple_choice = data['chooseVoteQuantity']
+        old = None
 
         try:
             vote = Vote.objects.get(serial_no=vote_no)
@@ -101,9 +109,10 @@ class VoteViewSet(ModelViewSet):
         if len(vote_record) > 0:
             return can_not_edit()
 
+        group_no = vote.group_no
         if vote.founder.user_id != uid:
             try:
-                group_member = GroupMember.objects.filter(user=uid, group_no=vote.group_no)
+                group_member = GroupMember.objects.filter(user=uid, group_no=group_no)
             except Exception as e:
                 print(e)
                 return err(Msg.Err.Group.member_read, 'VO-B-003')  # ----------------------------------------------003
@@ -142,6 +151,7 @@ class VoteViewSet(ModelViewSet):
                                'VO-B-006')  # ---------------------------------------------------------------------006
 
         if title is not None and title != vote.title:
+            old = vote.title
             vote.title = title
         if deadline is not None and deadline != vote.end_time:
             vote.end_time = deadline
@@ -152,6 +162,17 @@ class VoteViewSet(ModelViewSet):
         if multiple_choice is not None and multiple_choice != multiple_choice:
             vote.multiple_choice = multiple_choice
         vote.save()
+
+        try:
+            group_log = GroupLog.objects.create(do_time=datetime.now(), group_no_id=group_no, user_id=uid,
+                                                trigger_type='U', do_type_id=5)
+            if old is not None:
+                group_log.old = old
+                group_log.new = title
+        except Exception as e:
+            print(e)
+            return err(Msg.Err.Group.log_create, 'VO-B-007')  # ---------------------------------------------------007
+
         return success()
 
     # /vote/delete/  --------------------------------------------------------------------------------------------------C
@@ -170,9 +191,11 @@ class VoteViewSet(ModelViewSet):
             print(e)
             return err(Msg.Err.Vote.select, 'VO-C-001')  # --------------------------------------------------------001
 
+        title = vote.title
+        group_no = vote.group_no
         if vote.founder.user_id != uid:
             try:
-                GroupMember.objects.get(user_id=uid, group_no=vote.group_no)
+                GroupMember.objects.get(user_id=uid, group_no=group_no)
             except ObjectDoesNotExist:
                 return not_found(Msg.NotFound.user_vote)
             except Exception as e:
@@ -203,6 +226,13 @@ class VoteViewSet(ModelViewSet):
         except Exception as e:
             print(e)
             return err(Msg.Err.Vote.data_delete, 'VO-C-006')  # ---------------------------------------------------006
+
+        try:
+            GroupLog.objects.create(do_time=datetime.now(), group_no_id=group_no, user_id=uid, trigger_type='D',
+                                    do_type_id=5, old=title)
+        except Exception as e:
+            print(e)
+            return err(Msg.Err.Group.log_create, 'VO-C-007')  # ---------------------------------------------------007
         return success()
 
     # /vote/get/  -----------------------------------------------------------------------------------------------------D
@@ -381,8 +411,9 @@ class VoteViewSet(ModelViewSet):
         if vote.end_time < datetime.now():
             return vote_expired()
 
+        group_no = vote.group_no
         try:
-            GroupMember.objects.get(user_id=uid, group_no=vote.group_no, status__in=[1, 4])
+            GroupMember.objects.get(user_id=uid, group_no=group_no, status__in=[1, 4])
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.not_in_group)
         except Exception as e:
@@ -403,6 +434,14 @@ class VoteViewSet(ModelViewSet):
                 vote_option.objects.create(vote_no=vote, option_num=option_no, content=content)
         if len(exist_no_list) > 0:
             return vote_option_exist(f'{str(exist_no_list)}內容為{str(exist_content_list)}')
+
+        try:
+            GroupLog.objects.create(do_time=datetime.now(), group_no_id=group_no, user_id=uid, trigger_type='I',
+                                    do_type_id=6)
+        except Exception as e:
+            print(e)
+            err(Msg.Err.Group.log_create, 'VO-G-003')  # ----------------------------------------------------------003
+            
         return success()
 
     # /vote/get_end_list/  --------------------------------------------------------------------------------------------H
