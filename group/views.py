@@ -6,6 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from api.response import *
+from api.message import Msg
 from api.models import Account, Group, GroupMember, GroupList, GroupInviteList, GroupVote, GroupLog, \
     Friend, GroupScheduleTime, FriendList, GroupLogDetail
 from group.functions import new_group_request
@@ -367,17 +369,29 @@ class GroupViewSet(ModelViewSet):
         group = GroupScheduleTime.objects.filter(serial_no=group_num, end_time__gte=datetime.now())
         user_in_group = GroupMember.objects.filter(group_no=group_num, user_id=uid, status_id__in=[1, 4])
         if group.exists() and user_in_group.exists():
-            group_log = GroupLogDetail.objects.filter(group_no=group_num)
-            return Response({
-                'groupContent':
-                    [
-                        {
-                            'doTime': g.do_time,
-                            'name': g.name,
-                            'logContent': g.content
-                        }
-                        for g in group_log
-                    ]
-            })
+            group_log = GroupLog.objects.filter(group_no=group_num).order_by('do_time')
+
+            group_content = []
+            trigger_name = {'I': '建立了', 'U': '編輯了', 'D': '刪除了'}
+
+            for g in group_log:
+                group = {'doTime': g.do_time, 'name': g.user.name}
+                type_name = g.do_type.do_type_name
+                do_type = g.do_type.pk
+                content = ''
+                if g.new and g.old:
+                    content = f'把{type_name}從「{g.old}」改為「{g.new}」'
+                elif do_type == 2:
+                    content = '已加入群組' if g.trigger_type == 'I' else '已離開群組'
+                else:
+                    title = g.new if g.new else g.old
+                    if do_type in [4, 6] and g.trigger_type in ['I', 'D']:
+                        share = '分享了' if g.trigger_type == 'I' else '取消分享了'
+                        content = f'{share}{type_name}「{title}」'
+                    elif do_type in [1, 3, 4, 5, 6]:
+                        content = f'{trigger_name[g.trigger_type]}{type_name}「{title}」'
+                group['logContent'] = content
+                group_content.append(group)
+            return success({'groupContent': group_content})
         else:
-            return Response({'response': False, 'message': '沒有群組紀錄'})
+            return not_found(Msg.NotFound.group_log)
