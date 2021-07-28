@@ -100,6 +100,9 @@ class VoteViewSet(ModelViewSet):
             print(e)
             return err(Msg.Err.Vote.select, 'VO-B-001')  # --------------------------------------------------------001
 
+        if vote.end_time < datetime.now():
+            return vote_expired()
+
         try:
             vote_record = VoteRecord.objects.filter(vote_no=vote)
         except Exception as e:
