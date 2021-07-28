@@ -277,15 +277,21 @@ class VoteViewSet(ModelViewSet):
 
         vote_option_list = []
         for i in vote_option:
+            vote_count = VoteRecord.objects.filter(vote_no=vote_no, option_num=i.option_num).count()
+            is_vote = True if VoteRecord.objects.filter(vote_no=vote_no, option_num=i.option_num,
+                                                        user_id=uid).count() > 0 else False
             vote_option_list.append(
                 {
                     'voteItemNum': int(i.option_num),
-                    'voteItemName': int(i.content)
-
+                    'voteItemName': str(i.content),
+                    'voteItemCount': int(vote_count),
+                    'isVote': is_vote
                 }
             )
         response = {
             'title': vote.title,
+            'founderName': Account.objects.get(user_id=vote.founder.user_id).name,
+            'optionTypeId': vote.option_type_id,
             'voteItems': vote_option_list,
             'addItemPermit': bool(vote.is_add_option),
             'deadline': str(vote.end_time),
