@@ -1,10 +1,9 @@
-from django.shortcuts import render
-from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from django.db.models import ObjectDoesNotExist
 
 from api.models import Notice, Account, Friend
+from api.response import *
 from setting.serializers import SettingSerializer
 
 
@@ -24,9 +23,11 @@ class SettingViewSet(ModelViewSet):
         isTemporary = data.get('isTemporary')
 
         try:
-            account = Notice.objects.get(user_id=uid)
+            account = Account.objects.get(user_id=uid)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.account)
         except:
-            return Response({'request': False, 'message': '沒有此帳號'}, status=status.HTTP_400_BAD_REQUEST)
+            return err(Msg.Err.Account.get, 'SE-A-001')
 
         if isSchedule is not None:
             account.is_schedule_notice = isSchedule
@@ -42,7 +43,7 @@ class SettingViewSet(ModelViewSet):
 
         account.save()
 
-        return Response({'Response': True, 'message': '成功'}, status=status.HTTP_200_OK)
+        return success()
 
     @action(detail=False, methods=['POST'])
     def theme(self, request):
@@ -53,15 +54,17 @@ class SettingViewSet(ModelViewSet):
 
         try:
             account = Account.objects.get(user_id=uid)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.account)
         except:
-            return Response({'request': False, 'message': '沒有此帳號'}, status=status.HTTP_400_BAD_REQUEST)
+            return err(Msg.Err.Account.get, 'SE-A-002')
 
         if themeId is not None:
             account.theme_id = themeId
 
         account.save()
 
-        return Response({'Response': True, 'message': '成功'}, status=status.HTTP_200_OK)
+        return success()
 
     @action(detail=False, methods=['POST'])
     def privacy(self, request):
@@ -73,8 +76,10 @@ class SettingViewSet(ModelViewSet):
 
         try:
             account = Account.objects.get(user_id=uid)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.account)
         except:
-            return Response({'request': False, 'message': '沒有此帳號'}, status=status.HTTP_400_BAD_REQUEST)
+            return err(Msg.Err.Account.get,  'SE-A-003')
 
         if isLocation is not None:
             account.is_location = isLocation
@@ -84,7 +89,7 @@ class SettingViewSet(ModelViewSet):
 
         account.save()
 
-        return Response({'Response': True, 'message': '成功'}, status=status.HTTP_200_OK)
+        return success()
 
     @action(detail=False, methods=['POST'])
     def friend_privacy(self, request):

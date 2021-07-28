@@ -1,5 +1,11 @@
 class Msg:
     class Err:
+        class Account:
+            get = '取得帳號錯誤'
+            registered = '此email已被使用'
+            account_create = '建立帳號錯誤'
+            login = '登入失敗'
+
         class Schedule:
             create = '建立行程錯誤'
             select = '查詢行程錯誤'

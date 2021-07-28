@@ -1,10 +1,9 @@
-from django.shortcuts import render
-from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from django.db.models import ObjectDoesNotExist
 
 from api.models import Account
+from api.response import *
 from account.serializers import AccountSerializer
 
 
@@ -25,13 +24,13 @@ class AccountViewSet(ModelViewSet):
             registered = Account.objects.filter(user_id=uid).count()
 
             if registered > 0:
-                return Response({'response': False, 'message': '此email已被使用'}, status=status.HTTP_226_IM_USED)
+                return err(Msg.Err.Account.registered, 'AC-A-001')
             else:
                 new_account = Account.objects.create(user_id=uid, name=name, password=password)
                 new_account.save()
         except:
-            return Response({'response': False, 'message': '錯誤'}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'Response': True, 'message': '成功'}, status=status.HTTP_201_CREATED)
+            return err(Msg.Err.Account.account_create)
+        return success()
 
     @action(detail=False, methods=['POST'])
     def change_pw(self, request):
@@ -42,15 +41,17 @@ class AccountViewSet(ModelViewSet):
 
         try:
             account = Account.objects.get(user_id=uid)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.account)
         except:
-            return Response({'request': False, 'message': '沒有此帳號'}, status=status.HTTP_400_BAD_REQUEST)
+            return err(Msg.Err.Account.get, 'AC-B-001')
 
         if password is not None:
             account.password = password
 
         account.save()
 
-        return Response({'response': True, 'message': '更改密碼成功'}, status=status.HTTP_200_OK)
+        return success()
 
     @action(detail=False, methods=['POST'])
     def login(self, request):
@@ -62,6 +63,10 @@ class AccountViewSet(ModelViewSet):
         try:
             account = Account.objects.get(user_id=uid, password=password)
         except:
-            return Response({'request': False, 'message': '登入失敗'}, status=status.HTTP_400_BAD_REQUEST)
+            return err(Msg.Err.Account.login, 'AC-C-001')
 
-        return Response({'response': True, 'message': account.name}, status=status.HTTP_200_OK)
+        response = {
+            'userName': account.name
+        }
+
+        return success(response)
