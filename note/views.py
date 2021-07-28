@@ -190,7 +190,7 @@ class NoteViewSet(ModelViewSet):
             note_list.append(
                 {
                     'noteNum': i.serial_no,
-                    'typeNum': i.type_name,
+                    'typeName': i.type_name,
                     'title': i.title,
                     'createId': i.create_id
                 }
