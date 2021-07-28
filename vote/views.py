@@ -325,7 +325,9 @@ class VoteViewSet(ModelViewSet):
 
         vote_list = []
         for i in vote:
-            if i.end_time >= datetime.now():
+            now = datetime.now()
+            end_time = i.end_time if i.end_time is not None else now
+            if end_time >= now and i.end_time is None:
                 try:
                     vote_record = VoteRecord.objects.filter(vote_no=i.serial_no)
                 except:
@@ -333,7 +335,7 @@ class VoteViewSet(ModelViewSet):
                 try:
                     is_vote = True if VoteRecord.objects.filter(vote_no=i.serial_no, user_id=uid).count() > 0 else False
                 except:
-                    return err(Msg.Err.Vote.record_read, 'VO-E-004')  # ------------------------------------------ 004
+                    return err(Msg.Err.Vote.record_read, 'VO-E-004')  # -------------------------------------------004
                 vote_list.append(
                     {
                         'voteNum': i.serial_no,
