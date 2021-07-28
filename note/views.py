@@ -259,3 +259,29 @@ class NoteViewSet(ModelViewSet):
         note.group_no = None
         note.save()
         return success()
+
+    # /note/not_share_list/  ------------------------------------------------------------------------------------------I
+    @action(detail=False)
+    def not_share_list(self, request):
+        data = request.query_params
+
+        uid = data['uid']
+
+        try:
+            note = Note.objects.filter(create_id=uid)
+        except Exception as e:
+            print(e)
+            return err(Msg.Err.Note.select, 'NO-I-001')  # --------------------------------------------------------001
+
+        note_list = []
+        for i in note:
+            if i.group_no is None:
+                note_list.append(
+                    {
+                        'noteNum': i.serial_no,
+                        'typeName': i.type_name,
+                        'title': i.title
+                    }
+                )
+        response = {'note': note_list}
+        return success(response)
