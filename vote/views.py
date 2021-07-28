@@ -112,7 +112,7 @@ class VoteViewSet(ModelViewSet):
         if len(vote_record) > 0:
             return can_not_edit()
 
-        group_no = vote.group_no
+        group_no = vote.group_no.serial_no
         if vote.founder.user_id != uid:
             try:
                 group_member = GroupMember.objects.filter(user=uid, group_no=group_no)
@@ -168,14 +168,14 @@ class VoteViewSet(ModelViewSet):
 
         try:
             group_log = GroupLog.objects.create(do_time=datetime.now(), group_no_id=group_no, user_id=uid,
-                                                trigger_type='U', do_type_id=5)
-            if old is not None:
-                group_log.old = old
-                group_log.new = title
+                                                trigger_type='U', do_type_id=5, new=title)
         except Exception as e:
             print(e)
             return err(Msg.Err.Group.log_create, 'VO-B-007')  # ---------------------------------------------------007
 
+        if old is not None:
+            group_log.old = old
+            group_log.save()
         return success()
 
     # /vote/delete/  --------------------------------------------------------------------------------------------------C
@@ -195,16 +195,17 @@ class VoteViewSet(ModelViewSet):
             return err(Msg.Err.Vote.select, 'VO-C-001')  # --------------------------------------------------------001
 
         title = vote.title
-        group_no = vote.group_no
+        group_no = vote.group_no.serial_no
         if vote.founder.user_id != uid:
             try:
-                GroupMember.objects.get(user_id=uid, group_no=group_no)
+                group_member = GroupMember.objects.get(user_id=uid, group_no=group_no)
             except ObjectDoesNotExist:
                 return not_found(Msg.NotFound.user_vote)
             except Exception as e:
                 print(e)
                 return err(Msg.Err.Group.member_read, 'VO-C-002')  # ----------------------------------------------002
-            return no_authority('刪除投票')
+            if group_member.status_id != 4:
+                return no_authority('刪除投票')
 
         try:
             vote_record = VoteRecord.objects.filter(vote_no=vote)
@@ -232,7 +233,7 @@ class VoteViewSet(ModelViewSet):
 
         try:
             GroupLog.objects.create(do_time=datetime.now(), group_no_id=group_no, user_id=uid, trigger_type='D',
-                                    do_type_id=5, old=title)
+                                    do_type_id=5, old=str(title))
         except Exception as e:
             print(e)
             return err(Msg.Err.Group.log_create, 'VO-C-007')  # ---------------------------------------------------007
