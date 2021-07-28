@@ -191,7 +191,8 @@ class NoteViewSet(ModelViewSet):
                 {
                     'noteNum': i.serial_no,
                     'typeNum': i.type_name,
-                    'title': i.title
+                    'title': i.title,
+                    'createId': i.create_id
                 }
             )
         response = {'note': note_list}
