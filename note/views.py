@@ -226,6 +226,8 @@ class NoteViewSet(ModelViewSet):
             print(e)
             return err(Msg.Err.Group.member_read, 'NO-G-002')  # --------------------------------------------------002
 
+        if note.group_no is not None:
+            return not_found(Msg.NotFound.note_is_share)
         note.group_no_id = group_no
         note.save()
         return success()
@@ -244,7 +246,14 @@ class NoteViewSet(ModelViewSet):
             return not_found(Msg.NotFound.note)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Note.select, 'No-H-001')  # --------------------------------------------------------001
+            return err(Msg.Err.Note.select, 'NO-H-001')  # --------------------------------------------------------001
+        try:
+            group_no = note.group_no.serial_no
+        except AttributeError:
+            return not_found(Msg.NotFound.note_not_share)
+        except Exception as e:
+            print(e)
+            return err(Msg.Err.Note.select, 'NO-H-002')  # --------------------------------------------------------002
 
         if note.create_id != uid:
             try:

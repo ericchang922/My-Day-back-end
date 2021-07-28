@@ -47,6 +47,7 @@ class Msg:
         class Friend:
             already_sent_request = '已送出邀請'
             already_best_friend = '已為摯友'
+
     class NotFound:
         type = ''
         # account
@@ -68,7 +69,6 @@ class Msg:
         relation = '不存在的關係代碼'
         friend_request = '沒有邀請關係'
 
-
         # group
         group = '群組不存在'
         not_in_group = '用戶沒有此群組'  # group_member
@@ -79,6 +79,8 @@ class Msg:
         # note
         note = '筆記不存在'
         user_note = '用戶沒有此筆記'
+        note_not_share = '此筆記沒有被分享，無法取消分享'
+        note_is_share = '此筆記原本已分享'
 
         # setting
         notice = '找不到通知設定'
