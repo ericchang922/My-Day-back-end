@@ -42,7 +42,7 @@ class VoteViewSet(ModelViewSet):
             return err(Msg.Err.Group, 'VO-A-001')  # --------------------------------------------------------------001
 
         try:
-            GroupMember.objects.filter(user=uid, group_no=group_no, status__in=[1, 4])
+            GroupMember.objects.get(user=uid, group_no=group_no, status__in=[1, 4])
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.not_in_group)
         except Exception as e:
