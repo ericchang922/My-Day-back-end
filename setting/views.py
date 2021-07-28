@@ -103,7 +103,7 @@ class SettingViewSet(ModelViewSet):
         try:
             friend = Friend.objects.filter(user_id=uid, related_person=friendId)
         except:
-            return Response({'request': False, 'message': '他們還不是朋友'}, status=status.HTTP_400_BAD_REQUEST)
+            return err(Msg.NotFound.friend)
 
         if isTemporary is not None:
             friend.update(is_temporary_group=isTemporary)
@@ -111,4 +111,4 @@ class SettingViewSet(ModelViewSet):
         if isPublic is not None:
             friend.update(is_public_timetable=isPublic)
 
-        return Response({'Response': True, 'message': '成功'}, status=status.HTTP_200_OK)
+        return success()
