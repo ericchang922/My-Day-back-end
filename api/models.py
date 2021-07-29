@@ -352,6 +352,7 @@ class PlanContent(models.Model):
     plan_end = models.DateTimeField()
     note_no = models.ForeignKey(Note, models.DO_NOTHING, db_column='note_no', blank=True, null=True)
     is_rest = models.IntegerField(blank=True, null=True)
+    remark = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -416,6 +417,7 @@ class StudyPlan(models.Model):
     serial_no = models.AutoField(primary_key=True)
     create = models.ForeignKey(Account, models.DO_NOTHING, blank=True, null=True)
     schedule_no = models.ForeignKey(Schedule, models.DO_NOTHING, db_column='schedule_no', blank=True, null=True)
+    is_authority = models.IntegerField(default=False, null=False)
 
     class Meta:
         managed = False
