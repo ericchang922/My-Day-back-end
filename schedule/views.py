@@ -218,7 +218,9 @@ class ScheduleViewSet(ModelViewSet):
                 return err(Msg.Err.Group.member_read, 'SC-C-002')  # ----------------------------------------------002
 
         try:
-            personal_schedule = PersonalSchedule.objects.filter(schedule_no=schedule_no)
+            schedule_obj = PersonalSchedule.objects.filter
+            personal_schedule = schedule_obj(schedule_no=schedule_no) if is_connect else schedule_obj(
+                schedule_no=schedule_no, user_id=uid)
         except Exception as e:
             print(e)
             return err(Msg.Err.Schedule.personal_select, 'SC-C-003')  # -------------------------------------------003
@@ -463,11 +465,8 @@ class ScheduleViewSet(ModelViewSet):
         for i in schedule:
             if i.schedule_end < now:
                 schedule_list = past_list
-                print('past')
             else:
                 schedule_list = future_list
-                print('future')
-
             schedule_list.append(
                 {
                     'scheduleNum': int(i.serial_no),

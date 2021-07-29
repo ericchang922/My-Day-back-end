@@ -42,7 +42,7 @@ class VoteViewSet(ModelViewSet):
             return err(Msg.Err.Group, 'VO-A-001')  # --------------------------------------------------------------001
 
         try:
-            GroupMember.objects.filter(user=uid, group_no=group_no, status__in=[1, 4])
+            GroupMember.objects.get(user=uid, group_no=group_no, status__in=[1, 4])
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.not_in_group)
         except Exception as e:
@@ -100,6 +100,9 @@ class VoteViewSet(ModelViewSet):
             print(e)
             return err(Msg.Err.Vote.select, 'VO-B-001')  # --------------------------------------------------------001
 
+        if vote.end_time < datetime.now():
+            return vote_expired()
+
         try:
             vote_record = VoteRecord.objects.filter(vote_no=vote)
         except Exception as e:
@@ -109,7 +112,7 @@ class VoteViewSet(ModelViewSet):
         if len(vote_record) > 0:
             return can_not_edit()
 
-        group_no = vote.group_no
+        group_no = vote.group_no.serial_no
         if vote.founder.user_id != uid:
             try:
                 group_member = GroupMember.objects.filter(user=uid, group_no=group_no)
@@ -165,14 +168,14 @@ class VoteViewSet(ModelViewSet):
 
         try:
             group_log = GroupLog.objects.create(do_time=datetime.now(), group_no_id=group_no, user_id=uid,
-                                                trigger_type='U', do_type_id=5)
-            if old is not None:
-                group_log.old = old
-                group_log.new = title
+                                                trigger_type='U', do_type_id=5, new=title)
         except Exception as e:
             print(e)
             return err(Msg.Err.Group.log_create, 'VO-B-007')  # ---------------------------------------------------007
 
+        if old is not None:
+            group_log.old = old
+            group_log.save()
         return success()
 
     # /vote/delete/  --------------------------------------------------------------------------------------------------C
@@ -192,16 +195,17 @@ class VoteViewSet(ModelViewSet):
             return err(Msg.Err.Vote.select, 'VO-C-001')  # --------------------------------------------------------001
 
         title = vote.title
-        group_no = vote.group_no
+        group_no = vote.group_no.serial_no
         if vote.founder.user_id != uid:
             try:
-                GroupMember.objects.get(user_id=uid, group_no=group_no)
+                group_member = GroupMember.objects.get(user_id=uid, group_no=group_no)
             except ObjectDoesNotExist:
                 return not_found(Msg.NotFound.user_vote)
             except Exception as e:
                 print(e)
                 return err(Msg.Err.Group.member_read, 'VO-C-002')  # ----------------------------------------------002
-            return no_authority('刪除投票')
+            if group_member.status_id != 4:
+                return no_authority('刪除投票')
 
         try:
             vote_record = VoteRecord.objects.filter(vote_no=vote)
@@ -229,7 +233,7 @@ class VoteViewSet(ModelViewSet):
 
         try:
             GroupLog.objects.create(do_time=datetime.now(), group_no_id=group_no, user_id=uid, trigger_type='D',
-                                    do_type_id=5, old=title)
+                                    do_type_id=5, old=str(title))
         except Exception as e:
             print(e)
             return err(Msg.Err.Group.log_create, 'VO-C-007')  # ---------------------------------------------------007
@@ -274,15 +278,21 @@ class VoteViewSet(ModelViewSet):
 
         vote_option_list = []
         for i in vote_option:
+            vote_count = VoteRecord.objects.filter(vote_no=vote_no, option_num=i.option_num).count()
+            is_vote = True if VoteRecord.objects.filter(vote_no=vote_no, option_num=i.option_num,
+                                                        user_id=uid).count() > 0 else False
             vote_option_list.append(
                 {
                     'voteItemNum': int(i.option_num),
-                    'voteItemName': int(i.content)
-
+                    'voteItemName': str(i.content),
+                    'voteItemCount': int(vote_count),
+                    'isVote': is_vote
                 }
             )
         response = {
             'title': vote.title,
+            'founderName': Account.objects.get(user_id=vote.founder.user_id).name,
+            'optionTypeId': vote.option_type_id,
             'voteItems': vote_option_list,
             'addItemPermit': bool(vote.is_add_option),
             'deadline': str(vote.end_time),
@@ -316,7 +326,9 @@ class VoteViewSet(ModelViewSet):
 
         vote_list = []
         for i in vote:
-            if i.end_time >= datetime.now():
+            now = datetime.now()
+            end_time = i.end_time if i.end_time is not None else now
+            if end_time >= now and i.end_time is None:
                 try:
                     vote_record = VoteRecord.objects.filter(vote_no=i.serial_no)
                 except:
@@ -324,7 +336,7 @@ class VoteViewSet(ModelViewSet):
                 try:
                     is_vote = True if VoteRecord.objects.filter(vote_no=i.serial_no, user_id=uid).count() > 0 else False
                 except:
-                    return err(Msg.Err.Vote.record_read, 'VO-E-004')  # ------------------------------------------ 004
+                    return err(Msg.Err.Vote.record_read, 'VO-E-004')  # -------------------------------------------004
                 vote_list.append(
                     {
                         'voteNum': i.serial_no,

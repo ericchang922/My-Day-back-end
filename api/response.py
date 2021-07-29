@@ -1,6 +1,7 @@
 # rest
 from rest_framework.response import Response
 from rest_framework import status
+# 使用response的時候則無需再import message
 from api.message import *
 
 
