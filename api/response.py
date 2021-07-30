@@ -18,45 +18,56 @@ def success(response={}, request=None):
 
 
 def err(message='錯誤', err_code='', request=None):
-    logger.error(log_func(request, 'ERROR', err_code))
+    logger.error(log_func(request, message, 'ERROR', err_code))
     return Response({'response': False, 'message': message, 'err_code': err_code}, status=status.HTTP_400_BAD_REQUEST)
 
 
 def not_found(message='不存在', request=None):
-    logger.warning(log_func(request, 'NOT_FOUND'))
+    logger.warning(log_func(request, 'NOT_FOUND', message))
     return Response({'response': False, 'message': message}, status=status.HTTP_404_NOT_FOUND)
 
 
 def no_authority(authority='', request=None):
-    logger.warning(log_func(request, 'NO_AUTHORITY'))
-    return Response({'response': False, 'message': f'沒有{authority}權限'}, status=status.HTTP_403_FORBIDDEN)
+    message = f'沒有{authority}權限'
+    logger.warning(log_func(request, 'NO_AUTHORITY', message))
+    return Response({'response': False, 'message': message}, status=status.HTTP_403_FORBIDDEN)
 
 
 # vote
 def no_item(request=None):
-    logger.warning(log_func(request, 'NO_ITEM'))
-    return Response({'response': False, 'message': '至少新增一個選項'}, status=status.HTTP_400_BAD_REQUEST)
+    message = '至少新增一個選項'
+    logger.warning(log_func(request, 'NO_ITEM', message))
+    return Response({'response': False, 'message': message}, status=status.HTTP_400_BAD_REQUEST)
 
 
 def can_not_edit(request=None):
-    logger.warning(log_func(request, 'CAN_NOT_EDIT'))
-    return Response({'response': False, 'message': '已經投票不能修改'}, status=status.HTTP_403_FORBIDDEN)
+    message = '已經投票不能修改'
+    logger.warning(log_func(request, 'CAN_NOT_EDIT', message))
+    return Response({'response': False, 'message': message}, status=status.HTTP_403_FORBIDDEN)
 
 
 def limit_vote(request=None):
-    return Response({'response': False, 'message': '超過票數限制'}, status=status.HTTP_400_BAD_REQUEST)
+    message = '超過票數限制'
+    logger.warning(log_func(request, 'LIMIT_VOTE', message))
+    return Response({'response': False, 'message': message}, status=status.HTTP_400_BAD_REQUEST)
 
 
-def vote_option_exist(message='', request=None):
-    if message != '':
-        message = f'編號{message}的'
-    return Response({'response': False, 'message': f'{message}投票項目編號已經存在'}, status=status.HTTP_400_BAD_REQUEST)
+def vote_option_exist(num='', request=None):
+    if num != '':
+        num = f'編號{num}的'
+    message = f'{num}投票項目編號已經存在'
+    logger.warning(log_func(request, 'VOTE_OPTION_EXIST', message))
+    return Response({'response': False, 'message': message}, status=status.HTTP_400_BAD_REQUEST)
 
 
 def vote_expired(request=None):
-    return Response({'response': False, 'message': '投票已過期'}, status=status.HTTP_400_BAD_REQUEST)
+    message = '投票已過期'
+    logger.warning(log_func(request, 'VOTE_EXPIRED', message))
+    return Response({'response': False, 'message': message}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # note
 def note_is_connect(request=None):
-    return Response({'response': False, 'message': '筆記已經與讀書計畫綁定，請先解除綁定'}, status=status.HTTP_400_BAD_REQUEST)
+    message = '筆記已經與讀書計畫綁定，請先解除綁定'
+    logger.warning(log_func(request, 'NOTE_IS_CONNECT', message))
+    return Response({'response': False, 'message': message}, status=status.HTTP_400_BAD_REQUEST)
