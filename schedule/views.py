@@ -38,22 +38,22 @@ class ScheduleViewSet(ModelViewSet):
                                                schedule_end=end_time, place=place)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.create, 'SC-A-001')  # ----------------------------------------------------001
+            return err(Msg.Err.Schedule.create, 'SC-A-001', request)  # -------------------------------------------001
         try:
             personal_schedule = PersonalSchedule.objects.create(user_id=uid, schedule_no=schedule, is_notice=is_notice,
                                                                 is_countdown=is_countdown, is_hidden=False,
                                                                 remark=remark)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.personal_select, 'SC-A-002')  # -------------------------------------------002
+            return err(Msg.Err.Schedule.personal_select, 'SC-A-002', request)  # ----------------------------------002
         try:
             for i in remind_time:
                 ScheduleNotice.objects.create(personal_schedule_no=personal_schedule, notice_time=i)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.notice_create, 'SC-A-003')  # ---------------------------------------------003
+            return err(Msg.Err.Schedule.notice_create, 'SC-A-003', request)  # ------------------------------------003
 
-        return success()
+        return success(request=request)
 
     # /schedule/edit/  ------------------------------------------------------------------------------------------------B
     @action(detail=False, methods=['POST'])
@@ -69,10 +69,10 @@ class ScheduleViewSet(ModelViewSet):
         try:
             schedule = Schedule.objects.get(serial_no=schedule_no)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.schedule)
+            return not_found(Msg.NotFound.schedule, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.select, 'SC-B-001')  # ----------------------------------------------------001
+            return err(Msg.Err.Schedule.select, 'SC-B-001', request)  # -------------------------------------------001
 
         group_no = schedule.connect_group_no.serial_no if schedule.connect_group_no is not None else None
         if group_no is not None:
@@ -82,23 +82,23 @@ class ScheduleViewSet(ModelViewSet):
             personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule, user_id=uid)
         except ObjectDoesNotExist:
             if not is_connect:
-                return not_found(Msg.NotFound.personal_schedule)
+                return not_found(Msg.NotFound.personal_schedule, request)
 
             try:
                 GroupMember.objects.get(group_no_id=group_no, user_id=uid, status__in=[1, 4])
             except ObjectDoesNotExist:
-                return not_found(Msg.NotFound.not_in_group)
+                return not_found(Msg.NotFound.not_in_group, request)
 
             try:
                 personal_schedule = PersonalSchedule.objects.create(user_id=uid, schedule_no=schedule, is_notice=False,
                                                                     is_countdown=False, is_hidden=False)
             except Exception as e:
                 print(e)
-                return err(Msg.Err.Schedule.personal_create, 'SC-B-002')  # ---------------------------------------002
+                return err(Msg.Err.Schedule.personal_create, 'SC-B-002', request)  # ------------------------------002
 
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.personal_select, 'SC-B-003')  # -------------------------------------------003
+            return err(Msg.Err.Schedule.personal_select, 'SC-B-003', request)  # ----------------------------------003
 
         try:
             schedule_notice = ScheduleNotice.objects.filter(personal_schedule_no=personal_schedule)
@@ -133,9 +133,9 @@ class ScheduleViewSet(ModelViewSet):
                         del_notice = ScheduleNotice.objects.get(personal_schedule_no=personal_schedule, notice_time=s)
                         del_notice.delete()
                     except ObjectDoesNotExist:
-                        return not_found(Msg.NotFound.schedule_notice)
+                        return not_found(Msg.NotFound.schedule_notice, request)
                     except:
-                        return err(Msg.Err.Schedule.notice_delete, 'SC-B-004')  # ---------------------------------004
+                        return err(Msg.Err.Schedule.notice_delete, 'SC-B-004', request)  # ------------------------004
 
         if title is not None:
             old = str(schedule.schedule_name)
@@ -180,14 +180,14 @@ class ScheduleViewSet(ModelViewSet):
                                                     trigger_type='U', do_type_id=3)
             except Exception as e:
                 print(e)
-                return err(Msg.Err.Group.log_create, 'SC-B-005')  # -----------------------------------------------005
+                return err(Msg.Err.Group.log_create, 'SC-B-005', request)  # --------------------------------------005
             if is_edit_title:
                 group_log.old = old
                 group_log.new = str(schedule.schedule_name)
 
             group_log.save()
 
-        return success()
+        return success(request=request)
 
     # /schedule/delete/  ----------------------------------------------------------------------------------------------C
     @action(detail=False, methods=['POST'])
@@ -201,21 +201,21 @@ class ScheduleViewSet(ModelViewSet):
         try:
             schedule = Schedule.objects.get(serial_no=schedule_no)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.schedule)
+            return not_found(Msg.NotFound.schedule, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.select, 'SC-C-001')  # ----------------------------------------------------001
+            return err(Msg.Err.Schedule.select, 'SC-C-001', request, request)  # ----------------------------------001
         group_no = schedule.connect_group_no.serial_no if schedule.connect_group_no is not None else None
 
         if group_no is not None:
             is_connect = True
             try:
-                GroupMember.objects.get(group_no_id=group_no, user_id=uid, status=4)
+                GroupMember.objects.get(group_no_id=group_no, user_id=uid, status__in=[1, 4])
             except ObjectDoesNotExist:
-                return no_authority('刪除共同行程')
+                return no_authority('刪除共同行程', request)
             except Exception as e:
                 print(e)
-                return err(Msg.Err.Group.member_read, 'SC-C-002')  # ----------------------------------------------002
+                return err(Msg.Err.Group.member_read, 'SC-C-002', request)  # -------------------------------------002
 
         try:
             schedule_obj = PersonalSchedule.objects.filter
@@ -223,23 +223,23 @@ class ScheduleViewSet(ModelViewSet):
                 schedule_no=schedule_no, user_id=uid)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.personal_select, 'SC-C-003')  # -------------------------------------------003
+            return err(Msg.Err.Schedule.personal_select, 'SC-C-003', request)  # ----------------------------------003
 
         if len(personal_schedule) <= 0:
-            return not_found(Msg.NotFound.personal_schedule)
+            return not_found(Msg.NotFound.personal_schedule, request)
         for i in personal_schedule:
             try:
                 schedule_notice = ScheduleNotice.objects.filter(personal_schedule_no=i.serial_no)
                 schedule_notice.delete()
             except Exception as e:
                 print(e)
-                return err(Msg.Err.Schedule.notice_delete, 'SC-C-004')  # -----------------------------------------004
+                return err(Msg.Err.Schedule.notice_delete, 'SC-C-004', request)  # --------------------------------004
 
         try:
             personal_schedule.delete()
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.personal_delete, 'SC-C-005')  # -------------------------------------------005
+            return err(Msg.Err.Schedule.personal_delete, 'SC-C-005', request)  # ----------------------------------005
 
         if is_connect:
             try:
@@ -247,9 +247,9 @@ class ScheduleViewSet(ModelViewSet):
                                         do_type_id=3, old=schedule.schedule_name)
             except Exception as e:
                 print(e)
-                return err(Msg.Err.Group.log_create, 'SC-C-006')  # -----------------------------------------------006
+                return err(Msg.Err.Group.log_create, 'SC-C-006', request)  # --------------------------------------006
 
-        return success()
+        return success(request=request)
 
     # /schedule/get/  -------------------------------------------------------------------------------------------------D
     @action(detail=False)
@@ -262,18 +262,18 @@ class ScheduleViewSet(ModelViewSet):
         try:
             schedule = Schedule.objects.get(serial_no=schedule_no)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.schedule)
+            return not_found(Msg.NotFound.schedule, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.select, 'SC-D-001')  # ----------------------------------------------------001
+            return err(Msg.Err.Schedule.select, 'SC-D-001', request)  # -------------------------------------------001
 
         try:
             personal_schedule = PersonalSchedule.objects.get(schedule_no=schedule, user=uid)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.personal_schedule)
+            return not_found(Msg.NotFound.personal_schedule, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.personal_select, 'SC-D-002')  # -------------------------------------------002
+            return err(Msg.Err.Schedule.personal_select, 'SC-D-002', request)  # ----------------------------------002
 
         try:
             schedule_notice = ScheduleNotice.objects.filter(personal_schedule_no=personal_schedule)
@@ -297,7 +297,7 @@ class ScheduleViewSet(ModelViewSet):
             'place': schedule.place,
             'remark': personal_schedule.remark
         }
-        return success(response)
+        return success(response, request)
 
     # /schedule/get_list/  --------------------------------------------------------------------------------------------E
     @action(detail=False)
@@ -310,7 +310,7 @@ class ScheduleViewSet(ModelViewSet):
             personal_schedule = PersonalSchedule.objects.filter(user=uid).all()
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.personal_select, 'SC-E-001')  # -------------------------------------------001
+            return err(Msg.Err.Schedule.personal_select, 'SC-E-001', request)  # ----------------------------------001
 
         schedule_list = []
         try:
@@ -326,13 +326,13 @@ class ScheduleViewSet(ModelViewSet):
                     }
                 )
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.schedule)
+            return not_found(Msg.NotFound.schedule, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.select, 'SC-E-002')  # ----------------------------------------------------002
+            return err(Msg.Err.Schedule.select, 'SC-E-002', request)  # -------------------------------------------002
 
         response = {'schedule': schedule_list}
-        return success(response)
+        return success(response, request)
 
     # /schedule/create_common/  ---------------------------------------------------------------------------------------F
     @action(detail=False, methods=['POST'])
@@ -350,31 +350,31 @@ class ScheduleViewSet(ModelViewSet):
         try:
             group = Group.objects.get(serial_no=group_no)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.group)
+            return not_found(Msg.NotFound.group, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Group.select, 'SC-F-001')  # -------------------------------------------------------001
+            return err(Msg.Err.Group.select, 'SC-F-001', request)  # ----------------------------------------------001
 
         try:
             GroupMember.objects.get(group_no=group, user_id=uid, status__in=[1, 4])
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.not_in_group)
+            return not_found(Msg.NotFound.not_in_group, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Group.member_read, 'SC-F-002')  # --------------------------------------------------002
+            return err(Msg.Err.Group.member_read, 'SC-F-002', request)  # -----------------------------------------002
 
         try:
             schedule = Schedule.objects.create(schedule_name=title, connect_group_no=group, type_id=type_id,
                                                schedule_start=start_time, schedule_end=end_time, place=place)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.create, 'SC-F-003')  # ----------------------------------------------------003
+            return err(Msg.Err.Schedule.create, 'SC-F-003', request)  # -------------------------------------------003
 
         try:
             group_member = GroupMember.objects.filter(group_no=group_no, status__in=[1, 4])
         except Exception as e:
             print(e)
-            return err(Msg.Err.Group.member_read, 'SC-F-004')  # --------------------------------------------------004
+            return err(Msg.Err.Group.member_read, 'SC-F-004', request)  # -----------------------------------------004
 
         for i in group_member:
             try:
@@ -382,15 +382,15 @@ class ScheduleViewSet(ModelViewSet):
                                                 is_countdown=False, is_hidden=False)
             except Exception as e:
                 print(e)
-                return err(Msg.Err.Schedule.personal_create, 'SC-F-005')  # ---------------------------------------005
+                return err(Msg.Err.Schedule.personal_create, 'SC-F-005', request)  # ------------------------------005
         try:
             GroupLog.objects.create(do_time=datetime.now(), group_no_id=group_no, user_id=uid, trigger_type='I',
                                     do_type_id=3, new=title)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Group.log_create, 'SC-F-006')  # ---------------------------------------------------006
+            return err(Msg.Err.Group.log_create, 'SC-F-006', request)  # ------------------------------------------006
 
-        return success()
+        return success(request=request)
 
     # /schedule/get_common/  ------------------------------------------------------------------------------------------G
     @action(detail=False)
@@ -403,30 +403,30 @@ class ScheduleViewSet(ModelViewSet):
         try:
             schedule = Schedule.objects.get(serial_no=schedule_no)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.schedule)
+            return not_found(Msg.NotFound.schedule, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.select, 'SC-G-001')  # ----------------------------------------------------001
+            return err(Msg.Err.Schedule.select, 'SC-G-001', request)  # -------------------------------------------001
 
         try:
             PersonalSchedule.objects.get(schedule_no=schedule, user_id=uid)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.personal_schedule)
+            return not_found(Msg.NotFound.personal_schedule, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.personal_select, 'SC-G-002')  # -------------------------------------------002
+            return err(Msg.Err.Schedule.personal_select, 'SC-G-002', request)  # ----------------------------------002
 
         if schedule.connect_group_no is None:
-            return not_found(Msg.NotFound.common_schedule)
+            return not_found(Msg.NotFound.common_schedule, request)
 
         try:
             # 此功能是在有人建立共同行程後成員會收到通知時使用的，因此要驗證是否在群組內
             GroupMember.objects.get(user=uid, group_no=schedule.connect_group_no, status__in=[1, 4])
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.not_in_group)
+            return not_found(Msg.NotFound.not_in_group, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Group.member_read, 'SC-G-003')  # --------------------------------------------------003
+            return err(Msg.Err.Group.member_read, 'SC-G-003', request)  # -----------------------------------------003
 
         response = {
             'title': str(schedule.schedule_name),
@@ -435,7 +435,7 @@ class ScheduleViewSet(ModelViewSet):
             'typeName': str(schedule.type.type_name),
             'place': schedule.place
         }
-        return success(response)
+        return success(response, request)
 
     # /schedule/common_list/ ------------------------------------------------------------------------------------------H
     @action(detail=False)
@@ -448,16 +448,16 @@ class ScheduleViewSet(ModelViewSet):
         try:
             GroupMember.objects.get(user=uid, group_no=group_no, status__in=[1, 4])
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.not_in_group)
+            return not_found(Msg.NotFound.not_in_group, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Group.member_read, 'SC-H-001')  # --------------------------------------------------001
+            return err(Msg.Err.Group.member_read, 'SC-H-001', request)  # -----------------------------------------001
 
         try:
             schedule = Schedule.objects.filter(connect_group_no=group_no)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.select, 'SC-H-002')  # ----------------------------------------------------002
+            return err(Msg.Err.Schedule.select, 'SC-H-002', request)  # -------------------------------------------002
 
         past_list = []
         future_list = []
@@ -481,7 +481,7 @@ class ScheduleViewSet(ModelViewSet):
             'pastSchedule': past_list,
             'futureSchedule': future_list
         }
-        return success(response)
+        return success(response, request)
 
     # /schedule/common_hidden/  ---------------------------------------------------------------------------------------I
     @action(detail=False, methods=['POST'])
@@ -497,12 +497,12 @@ class ScheduleViewSet(ModelViewSet):
             personal_schedule.is_hidden = is_hidden
             personal_schedule.save()
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.no_personal_schedule)
+            return not_found(Msg.NotFound.no_personal_schedule, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.select, 'SC-I-001')  # ----------------------------------------------------001
+            return err(Msg.Err.Schedule.select, 'SC-I-001', request)  # -------------------------------------------001
 
-        return success()
+        return success(request=request)
 
     # /schedule/countdown_list/  --------------------------------------------------------------------------------------J
     @action(detail=False)
@@ -515,7 +515,7 @@ class ScheduleViewSet(ModelViewSet):
             personal_schedule = PersonalSchedule.objects.filter(user=uid, is_countdown=True)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Schedule.personal_select, 'SC-J-001')  # -------------------------------------------001
+            return err(Msg.Err.Schedule.personal_select, 'SC-J-001', request)  # ----------------------------------001
 
         now = datetime.now()
         schedule_list = []
@@ -523,10 +523,10 @@ class ScheduleViewSet(ModelViewSet):
             try:
                 schedule = Schedule.objects.get(serial_no=i.schedule_no.serial_no)
             except ObjectDoesNotExist:
-                return not_found(Msg.NotFound.schedule)
+                return not_found(Msg.NotFound.schedule, request)
             except Exception as e:
                 print(e)
-                return err(Msg.Err.Schedule.select, 'SC-J-002')  # ------------------------------------------------002
+                return err(Msg.Err.Schedule.select, 'SC-J-002', request)  # ---------------------------------------002
 
             days = schedule.schedule_start - now
             days = days.days
@@ -540,4 +540,4 @@ class ScheduleViewSet(ModelViewSet):
                 )
 
         response = {'schedule': schedule_list}
-        return success(response)
+        return success(response, request)
