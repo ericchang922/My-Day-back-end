@@ -154,6 +154,12 @@ LOGGING = {
             'class': 'logging.FileHandler',
             'filename': './logs/django.log',
             'formatter': 'main'
+        },
+        'message_log': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': './logs/message.log',
+            'formatter': 'main'
         }
     },
     'loggers': {
@@ -167,5 +173,10 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True
         },
+        'message': {
+            'handlers': ['message_log'],
+            'level': 'DEBUG',
+            'propagate': True
+        }
     }
 }
