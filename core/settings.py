@@ -9,8 +9,8 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
-
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -49,9 +49,6 @@ INSTALLED_APPS = [
     'bootstrap4',
 ]
 
-
-
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -89,10 +86,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'MyDay',
-        'USER':'MyDay110504',
-        'PASSWORD':'10656004',
-        'HOST':'mydaydb.cjadqiztqjax.ap-northeast-1.rds.amazonaws.com',
-        'PORT':'3306',
+        'USER': 'MyDay110504',
+        'PASSWORD': '10656004',
+        'HOST': 'mydaydb.cjadqiztqjax.ap-northeast-1.rds.amazonaws.com',
+        'PORT': '3306',
     }
 }
 
@@ -135,3 +132,40 @@ DATETIME_FORMAT = 'Y-m-d H:i:s'
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'main': {
+            'format': '{asctime} >> {levelname}: {message}',
+            'style': '{'
+        },
+    },
+    'handlers': {
+        'my_day_log': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': './logs/my_day.log',
+            'formatter': 'main'
+        },
+        'django_log': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': './logs/django.log',
+            'formatter': 'main'
+        }
+    },
+    'loggers': {
+        'my_day': {
+            'handlers': ['my_day_log'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+        'django': {
+            'handlers': ['django_log'],
+            'level': 'INFO',
+            'propagate': True
+        },
+    }
+}

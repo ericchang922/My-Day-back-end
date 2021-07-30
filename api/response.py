@@ -1,50 +1,62 @@
+# python
+import logging
 # rest
 from rest_framework.response import Response
 from rest_framework import status
+# my day
+from api.log_func import log_func
 # 使用response的時候則無需再import message
 from api.message import *
 
+logger = logging.getLogger('my_day')
 
-def success(response={}):
+
+def success(response={}, request=None):
     response.update({'response': True})
+    logger.info(log_func(request, 'OK'))
     return Response(response, status=status.HTTP_200_OK)
 
 
-def err(message='錯誤', err_code=''):
+def err(message='錯誤', err_code='', request=None):
+    logger.error(log_func(request, 'ERROR', err_code))
     return Response({'response': False, 'message': message, 'err_code': err_code}, status=status.HTTP_400_BAD_REQUEST)
 
 
-def not_found(message='不存在'):
+def not_found(message='不存在', request=None):
+    logger.warning(log_func(request, 'NOT_FOUND'))
     return Response({'response': False, 'message': message}, status=status.HTTP_404_NOT_FOUND)
 
 
-def no_authority(authority=''):
+def no_authority(authority='', request=None):
+    logger.warning(log_func(request, 'NO_AUTHORITY'))
     return Response({'response': False, 'message': f'沒有{authority}權限'}, status=status.HTTP_403_FORBIDDEN)
 
 
 # vote
-def no_item():
+def no_item(request=None):
+    logger.warning(log_func(request, 'NO_ITEM'))
     return Response({'response': False, 'message': '至少新增一個選項'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-def can_not_edit():
+def can_not_edit(request=None):
+    logger.warning(log_func(request, 'CAN_NOT_EDIT'))
     return Response({'response': False, 'message': '已經投票不能修改'}, status=status.HTTP_403_FORBIDDEN)
 
 
-def limit_vote():
+def limit_vote(request=None):
     return Response({'response': False, 'message': '超過票數限制'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-def vote_option_exist(message=''):
+def vote_option_exist(message='', request=None):
     if message != '':
         message = f'編號{message}的'
     return Response({'response': False, 'message': f'{message}投票項目編號已經存在'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-def vote_expired():
+def vote_expired(request=None):
     return Response({'response': False, 'message': '投票已過期'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # note
-def note_is_connect():
+def note_is_connect(request=None):
     return Response({'response': False, 'message': '筆記已經與讀書計畫綁定，請先解除綁定'}, status=status.HTTP_400_BAD_REQUEST)
