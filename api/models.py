@@ -102,6 +102,8 @@ class GroupVote(models.Model):
 
 class GetStudyplan(models.Model):
     create_id = models.CharField(max_length=255, blank=True, null=True)
+    name = models.CharField(max_length=255, db_collation='utf8_general_ci', blank=True, null=True)
+    is_authority = models.IntegerField()
     plan_no = models.IntegerField(primary_key=True)
     plan_num = models.IntegerField()
     schedule_name = models.CharField(max_length=255)
@@ -429,6 +431,7 @@ class StudyplanList(models.Model):
     field_date = models.DateField(db_column='_date', blank=True, null=True)  # Field renamed because it started with '_'.
     schedule_start = models.DateTimeField()
     schedule_end = models.DateTimeField()
+    connect_group_no = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = False  # Created from a view. Don't remove.
