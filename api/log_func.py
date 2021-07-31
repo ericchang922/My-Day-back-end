@@ -9,7 +9,10 @@ def log_func(request, status, message='null', code=''):
     method = request.method
     ip = request.META['REMOTE_ADDR']
     data = request.data if method != 'GET' else request.query_params
-    uid = data['uid']
+    try:
+        uid = data['uid']
+    except KeyError:
+        uid = data['founder']
     path = request.path_info
     msg_log.info(f'{uid}: {message}')
     return f'{uid}\tIP: {ip} \n\t\t\t\t\t\t{status}:{code} [{method}]{path}'
