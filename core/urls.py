@@ -23,6 +23,8 @@ from vote import views as vote_views
 from setting import views as setting_views
 # profile
 from user_profile import views as profile_views
+# timetable
+from timetable import views as timetable_views
 
 router = DefaultRouter()
 router.register('friend', friend_views.FriendViewSet)
@@ -42,6 +44,8 @@ router.register('vote', vote_views.VoteViewSet)
 router.register('setting', setting_views.SettingViewSet)
 # profile
 router.register('profile', profile_views.ProfileViewSet)
+# timetable
+router.register('timetable', timetable_views.TimetableViewSet)
 
 
 urlpatterns = [
