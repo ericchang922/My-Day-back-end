@@ -23,6 +23,7 @@ from vote import views as vote_views
 from setting import views as setting_views
 # profile
 from user_profile import views as profile_views
+from api import views as api_views
 
 router = DefaultRouter()
 router.register('friend', friend_views.FriendViewSet)
@@ -43,8 +44,8 @@ router.register('setting', setting_views.SettingViewSet)
 # profile
 router.register('profile', profile_views.ProfileViewSet)
 
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
+    path('logs/', include('api.urls'))
 ]
