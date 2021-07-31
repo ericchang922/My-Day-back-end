@@ -78,4 +78,4 @@ class TimetableViewSet(ModelViewSet):
             except:
                 return err(Msg.Err.Timetable.create, 'TI-A-007', request)
 
-        return Response({'Response': True, 'message': '成功'}, status=status.HTTP_201_CREATED)
+        return success(request=request)
