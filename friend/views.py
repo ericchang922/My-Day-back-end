@@ -33,11 +33,11 @@ class FriendViewSet(ModelViewSet):
             Friend.objects.create(user=user, related_person=friend, relation=invite)
             Friend.objects.create(user=friend, related_person=user, relation=be_invited)
 
-            return success()
+            return success(request=request)
         except IntegrityError:
-            return err(Msg.Err.Friend.already_sent_request, err_code='FR-A-001')
+            return err(Msg.Err.Friend.already_sent_request, err_code='FR-A-001', request=request)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.account)
+            return not_found(Msg.NotFound.account, request)
 
     @action(detail=False, methods=['PATCH'])
     def add_reply(self, request):
@@ -48,7 +48,7 @@ class FriendViewSet(ModelViewSet):
         relation_id = data.get('relationId')
 
         if relation_id not in [1, 5]:
-            return not_found(Msg.NotFound.relation)
+            return not_found(Msg.NotFound.relation, request)
 
         be_invited = Friend.objects.filter(user=uid, related_person=friend_id, relation_id=4)
         invite = Friend.objects.filter(related_person=uid, user=friend_id, relation_id=3)
@@ -57,11 +57,11 @@ class FriendViewSet(ModelViewSet):
             if relation_id == 1:
                 be_invited.update(relation_id=relation_id)
                 invite.update(relation_id=relation_id)
-                return success()
+                return success(request=request)
             else:
                 be_invited.delete()
                 invite.delete()
-                return success()
+                return success(request=request)
         else:
             return not_found(Msg.NotFound.friend_request)
 
@@ -77,9 +77,9 @@ class FriendViewSet(ModelViewSet):
         if user_friendship.exists() and friend_friendship.exists():
             user_friendship.delete()
             friend_friendship.delete()
-            return success()
+            return success(request=request)
         else:
-            return not_found(Msg.NotFound.friend)
+            return not_found(Msg.NotFound.friend, request)
 
     @action(detail=False, methods=['PATCH'])
     def add_best(self, request):
@@ -93,11 +93,11 @@ class FriendViewSet(ModelViewSet):
 
         if friendship.exists() and just_friend.exists():
             just_friend.update(relation_id=2)
-            return success()
+            return success(request=request)
         elif not friendship.exists():
-            return not_found(Msg.NotFound.friend)
+            return not_found(Msg.NotFound.friend, request)
         else:
-            return err(Msg.Err.Friend.already_best_friend, err_code='FR-D-001')
+            return err(Msg.Err.Friend.already_best_friend, err_code='FR-D-001', request=request)
 
     @action(detail=False, methods=['PATCH'])
     def delete_best(self, request):
@@ -109,9 +109,9 @@ class FriendViewSet(ModelViewSet):
         friend = Friend.objects.filter(user_id=uid, related_person=friend_id, relation_id=2)
         if friend.exists():
             friend.update(relation_id=1)
-            return success()
+            return success(request=request)
         else:
-            return not_found(Msg.NotFound.best_friend)
+            return not_found(Msg.NotFound.best_friend, request)
 
     @action(detail=False)
     def get(self, request):
@@ -137,7 +137,7 @@ class FriendViewSet(ModelViewSet):
                 'photo': friend.first().photo,
                 'friendName': friend.first().name,
                 'timetableId': timetable_no,
-            })
+            }, request=request)
         else:
             return not_found(Msg.NotFound.friend)
 
@@ -158,7 +158,7 @@ class FriendViewSet(ModelViewSet):
                 }
                 for f in friend
             ]
-        })
+        }, request=request)
 
     @action(detail=False)
     def best_list(self, request):
@@ -177,7 +177,7 @@ class FriendViewSet(ModelViewSet):
                 }
                 for f in friend
             ]
-        })
+        }, request=request)
 
     @action(detail=False)
     def make_invite_list(self, request):
@@ -195,5 +195,4 @@ class FriendViewSet(ModelViewSet):
                 }
                 for f in friend
             ]
-        })
-
+        }, request=request)
