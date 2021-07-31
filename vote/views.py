@@ -289,6 +289,7 @@ class VoteViewSet(ModelViewSet):
             )
         response = {
             'title': vote.title,
+            'founderId': vote.founder_id,
             'founderName': Account.objects.get(user_id=vote.founder.user_id).name,
             'optionTypeId': vote.option_type_id,
             'voteItems': vote_option_list,
