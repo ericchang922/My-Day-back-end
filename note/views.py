@@ -31,9 +31,9 @@ class NoteViewSet(ModelViewSet):
             Note.objects.create(create_id=uid, type_name=type_name, title=title, content=content, is_personal=True)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Note.create, 'NO-A-001')  # --------------------------------------------------------001
+            return err(Msg.Err.Note.create, 'NO-A-001', request, request)  # --------------------------------------001
 
-        return success()
+        return success(request=request)
 
     # /note/edit/  ----------------------------------------------------------------------------------------------------B
     @action(detail=False, methods=['POST'])
@@ -50,21 +50,21 @@ class NoteViewSet(ModelViewSet):
         try:
             note = Note.objects.get(serial_no=note_no)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.note)
+            return not_found(Msg.NotFound.note, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Note.select, 'NO-B-001')  # --------------------------------------------------------001
+            return err(Msg.Err.Note.select, 'NO-B-001', request)  # --------------------------------------001
 
         group_no = note.group_no.serial_no
         if note.create_id != uid:
             try:
                 GroupMember.objects.get(user=uid, group_no=group_no)
             except ObjectDoesNotExist:
-                return not_found(Msg.NotFound.user_note)
+                return not_found(Msg.NotFound.user_note, request)
             except Exception as e:
                 print(e)
-                return err(Msg.Err.Group.member_read, 'NO-B-002')  # ----------------------------------------------002
-            return no_authority('編輯筆記')
+                return err(Msg.Err.Group.member_read, 'NO-B-002', request)  # -------------------------------------002
+            return no_authority('編輯筆記', request)
 
         if note.type_name != type_name and type_name is not None:
             note.type_name = type_name
@@ -80,13 +80,13 @@ class NoteViewSet(ModelViewSet):
                                                     trigger_type='U', do_type_id=7, new=title)
             except Exception as e:
                 print(e)
-                return err(Msg.Err.Group.log_create, 'NO-B-003')  # -----------------------------------------------003
+                return err(Msg.Err.Group.log_create, 'NO-B-003', request)  # --------------------------------------003
             if old is not None:
                 print(old)
                 group_log.old = old
                 group_log.save()
         note.save()
-        return success()
+        return success(request=request)
 
     # /note/delete/  --------------------------------------------------------------------------------------------------C
     @action(detail=False, methods=['POST'])
@@ -99,38 +99,33 @@ class NoteViewSet(ModelViewSet):
         try:
             note = Note.objects.get(serial_no=note_no)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.note)
+            return not_found(Msg.NotFound.note, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Note.select, 'NO-C-001')  # --------------------------------------------------------001
+            return err(Msg.Err.Note.select, 'NO-C-001', request)  # -----------------------------------------------001
 
         group_no = note.group_no.serial_no
         title = note.title
+        if group_no is None:
+            return note_is_connect(request=request)
         if note.create_id != uid:
             try:
                 GroupMember.objects.get(user=uid, group_no=group_no)
             except ObjectDoesNotExist:
-                return not_found(Msg.NotFound.user_note)
+                return not_found(Msg.NotFound.user_note, request)
             except Exception as e:
                 print(e)
-                return err(Msg.Err.Group.member_read, 'NO-C-002')  # ----------------------------------------------002
-            return no_authority('刪除筆記')
+                return err(Msg.Err.Group.member_read, 'NO-C-002', request)  # -------------------------------------002
+            return no_authority('刪除筆記', request)
 
         try:
             note.delete()
         except IntegrityError:
-            return note_is_connect()
+            return note_is_connect(request=request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Note.delete, 'NO-C-003')  # --------------------------------------------------------003
-        if group_no is not None:
-            try:
-                GroupLog.objects.create(do_time=datetime.now(), group_no_id=group_no, user_id=uid, trigger_type='D',
-                                        old=str(title))
-            except Exception as e:
-                print(e)
-                return err(Msg.Err.Group.log_create, 'NO-C-004')  # -----------------------------------------------004
-        return success()
+            return err(Msg.Err.Note.delete, 'NO-C-003', request)  # -----------------------------------------------003
+        return success(request=request)
 
     # /note/get/  -----------------------------------------------------------------------------------------------------D
     @action(detail=False)
@@ -143,25 +138,25 @@ class NoteViewSet(ModelViewSet):
         try:
             note = Note.objects.get(serial_no=note_no)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.note)
+            return not_found(Msg.NotFound.note, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Note.select, 'NO-D-001')  # --------------------------------------------------------001
+            return err(Msg.Err.Note.select, 'NO-D-001', request)  # -----------------------------------------------001
 
         if note.create_id != uid:
             try:
                 GroupMember.objects.filter(user=uid, group_no=note.group_no, status__in=[1, 4])
             except ObjectDoesNotExist:
-                return not_found(Msg.NotFound.user_note)
+                return not_found(Msg.NotFound.user_note, request)
             except Exception as e:
                 print(e)
-                return err(Msg.Err.Group.member_read, 'NO-D-002')  # ----------------------------------------------002
+                return err(Msg.Err.Group.member_read, 'NO-D-002', request)  # -------------------------------------002
 
         response = {
             'title': note.title,
             'content': note.content
         }
-        return success(response)
+        return success(response, request)
 
     # /note/get_list/  ------------------------------------------------------------------------------------------------E
     @action(detail=False)
@@ -174,7 +169,7 @@ class NoteViewSet(ModelViewSet):
             note = Note.objects.filter(create_id=uid)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Note.select, 'NO-E-001')  # --------------------------------------------------------001
+            return err(Msg.Err.Note.select, 'NO-E-001', request)  # -----------------------------------------------001
 
         note_list = []
         for i in note:
@@ -186,7 +181,7 @@ class NoteViewSet(ModelViewSet):
                 }
             )
         response = {'note': note_list}
-        return success(response)
+        return success(response, request)
 
     # /note/get_group_list/  ------------------------------------------------------------------------------------------F
     @action(detail=False)
@@ -199,16 +194,16 @@ class NoteViewSet(ModelViewSet):
         try:
             GroupMember.objects.filter(user_id=uid, group_no=group_no, status__in=[1, 4])
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.not_in_group)
+            return not_found(Msg.NotFound.not_in_group, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Group.member_read, 'NO-F-001')  # --------------------------------------------------001
+            return err(Msg.Err.Group.member_read, 'NO-F-001', request)  # -----------------------------------------001
 
         try:
             note = Note.objects.filter(group_no=group_no)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Note.select, 'NO-F-002')  # --------------------------------------------------------002
+            return err(Msg.Err.Note.select, 'NO-F-002', request)  # -----------------------------------------------002
 
         note_list = []
         for i in note:
@@ -221,7 +216,7 @@ class NoteViewSet(ModelViewSet):
                 }
             )
         response = {'note': note_list}
-        return success(response)
+        return success(response, request)
 
     # /note/share/  ---------------------------------------------------------------------------------------------------G
     @action(detail=False, methods=['POST'])
@@ -235,24 +230,24 @@ class NoteViewSet(ModelViewSet):
         try:
             note = Note.objects.get(serial_no=note_no)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.note)
+            return not_found(Msg.NotFound.note, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Note.select, 'NO-G-001')  # --------------------------------------------------------001
+            return err(Msg.Err.Note.select, 'NO-G-001', request)  # -----------------------------------------------001
 
         if note.create_id != uid:
-            return not_found(Msg.NotFound.user_note)
+            return not_found(Msg.NotFound.user_note, request)
 
         try:
             GroupMember.objects.get(user=uid, group_no=group_no, status__in=[1, 4])
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.not_in_group)
+            return not_found(Msg.NotFound.not_in_group, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Group.member_read, 'NO-G-002')  # --------------------------------------------------002
+            return err(Msg.Err.Group.member_read, 'NO-G-002', request)  # -----------------------------------------002
 
         if note.group_no is not None:
-            return not_found(Msg.NotFound.note_is_share)
+            return not_found(Msg.NotFound.note_is_share, request)
         note.group_no_id = group_no
         note.save()
 
@@ -261,9 +256,9 @@ class NoteViewSet(ModelViewSet):
                                     do_type_id=7, new=str(note.title))
         except Exception as e:
             print(e)
-            return err(Msg.Err.Group.log_create, 'NO-G-003')  # ---------------------------------------------------003
+            return err(Msg.Err.Group.log_create, 'NO-G-003', request)  # ------------------------------------------003
 
-        return success()
+        return success(request=request)
 
     # /note/cancel_share/  --------------------------------------------------------------------------------------------H
     @action(detail=False, methods=['POST'])
@@ -276,27 +271,27 @@ class NoteViewSet(ModelViewSet):
         try:
             note = Note.objects.get(serial_no=note_no)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.note)
+            return not_found(Msg.NotFound.note, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Note.select, 'NO-H-001')  # --------------------------------------------------------001
+            return err(Msg.Err.Note.select, 'NO-H-001', request)  # -----------------------------------------------001
         try:
             group_no = note.group_no.serial_no
         except AttributeError:
-            return not_found(Msg.NotFound.note_not_share)
+            return not_found(Msg.NotFound.note_not_share, request)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Note.select, 'NO-H-002')  # --------------------------------------------------------002
+            return err(Msg.Err.Note.select, 'NO-H-002', request)  # -----------------------------------------------002
 
         if note.create_id != uid:
             try:
                 GroupMember.objects.get(user=uid, group_no=group_no, status__in=[1, 4])
             except ObjectDoesNotExist:
-                return not_found(Msg.NotFound.user_note)
+                return not_found(Msg.NotFound.user_note, request)
             except Exception as e:
                 print(e)
-                return err(Msg.Err.Group.member_read, 'NO-H-003')  # ----------------------------------------------003
-            return no_authority('筆記')
+                return err(Msg.Err.Group.member_read, 'NO-H-003', request)  # -------------------------------------003
+            return no_authority('筆記', request)
 
         note.group_no = None
         note.save()
@@ -306,8 +301,8 @@ class NoteViewSet(ModelViewSet):
                                     old=str(note.title))
         except Exception as e:
             print(e)
-            return err(Msg.Err.Group.log_create, 'NO-H-004')  # ---------------------------------------------------004
-        return success()
+            return err(Msg.Err.Group.log_create, 'NO-H-004', request)  # ------------------------------------------004
+        return success(request=request)
 
     # /note/not_share_list/  ------------------------------------------------------------------------------------------I
     @action(detail=False)
@@ -320,7 +315,7 @@ class NoteViewSet(ModelViewSet):
             note = Note.objects.filter(create_id=uid)
         except Exception as e:
             print(e)
-            return err(Msg.Err.Note.select, 'NO-I-001')  # --------------------------------------------------------001
+            return err(Msg.Err.Note.select, 'NO-I-001', request)  # -----------------------------------------------001
 
         note_list = []
         for i in note:
@@ -333,4 +328,4 @@ class NoteViewSet(ModelViewSet):
                     }
                 )
         response = {'note': note_list}
-        return success(response)
+        return success(response, request)
