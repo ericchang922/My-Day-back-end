@@ -65,7 +65,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            BASE_DIR/'templates'
+            BASE_DIR / 'templates'
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -143,6 +143,10 @@ LOGGING = {
             'format': '{asctime} >> {levelname}: {message}',
             'style': '{'
         },
+        'simple': {
+            'format': '{asctime}\t{message}',
+            'style': '{'
+        }
     },
     'handlers': {
         'my_day_log': {
@@ -162,6 +166,11 @@ LOGGING = {
             'class': 'logging.FileHandler',
             'filename': './logs/message.log',
             'formatter': 'main'
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
         }
     },
     'loggers': {
@@ -171,7 +180,7 @@ LOGGING = {
             'propagate': True
         },
         'django': {
-            'handlers': ['django_log'],
+            'handlers': ['django_log', 'console'],
             'level': 'INFO',
             'propagate': True
         },
