@@ -22,7 +22,7 @@ class TimetableViewSet(ModelViewSet):
         school_year = data.get('schoolYear')
         semester = data.get('semester')
         start_date = data.get('startDate')
-        endDate = data.get('endDate')
+        end_date = data.get('endDate')
 
         subject = request.data['subject']
 
@@ -36,7 +36,7 @@ class TimetableViewSet(ModelViewSet):
             return err(Msg.Err.Timetable.school_create, 'TI-A-002', request)
         try:
             PersonalTimetable.objects.create(user_id=uid, semester=f'{school_year}-{semester}', school_no=school,
-                                             semester_start=start_date, semester_end=endDate, timetable_no=timetable)
+                                             semester_start=start_date, semester_end=end_date, timetable_no=timetable)
         except:
             return err(Msg.Err.Timetable.personal_create, 'TI-A-003', request)
 
