@@ -26,15 +26,15 @@ class Account(models.Model):
 
 
 class ClassTime(models.Model):
-    serial_no = models.AutoField(primary_key=True)
+    school_no = models.ForeignKey('School', models.DO_NOTHING, db_column='school_no')
     section_no = models.ForeignKey('Section', models.DO_NOTHING, db_column='section_no')
-    start = models.DateTimeField()
-    end = models.DateTimeField()
+    start = models.TimeField()
+    end = models.TimeField()
 
     class Meta:
         managed = False
         db_table = 'class_time'
-        unique_together = (('serial_no', 'section_no'),)
+        unique_together = (('school_no', 'section_no'),)
 
 
 class DoType(models.Model):
@@ -336,9 +336,9 @@ class PersonalTimetable(models.Model):
     user = models.OneToOneField(Account, models.DO_NOTHING, primary_key=True)
     semester = models.CharField(max_length=255)
     school_no = models.ForeignKey('School', models.DO_NOTHING, db_column='school_no', blank=True, null=True)
-    semester_start = models.DateTimeField(blank=True, null=True)
-    semester_end = models.DateTimeField(blank=True, null=True)
-    timetable_no = models.ForeignKey('Timetable', models.DO_NOTHING, db_column='timetable_no')
+    semester_start = models.DateField(blank=True, null=True)
+    semester_end = models.DateField(blank=True, null=True)
+    timetable_no = models.ForeignKey('TimetableCreate', models.DO_NOTHING, db_column='timetable_no')
 
     class Meta:
         managed = False
@@ -398,7 +398,6 @@ class ScheduleNotice(models.Model):
 class School(models.Model):
     serial_no = models.AutoField(primary_key=True)
     school_name = models.CharField(max_length=255)
-    class_time_no = models.ForeignKey(ClassTime, models.DO_NOTHING, db_column='class_time_no')
 
     class Meta:
         managed = False
@@ -408,7 +407,7 @@ class School(models.Model):
 class Section(models.Model):
     section_no = models.IntegerField(primary_key=True)
     weekday = models.CharField(max_length=255)
-    section = models.CharField(max_length=255)
+    section = models.IntegerField()
 
     class Meta:
         managed = False
@@ -476,14 +475,14 @@ class Theme(models.Model):
 
 
 class Timetable(models.Model):
-    serial_no = models.AutoField(primary_key=True)
+    timetalbe_no = models.ForeignKey('TimetableCreate', models.DO_NOTHING, db_column='timetalbe_no')
     section_no = models.ForeignKey(Section, models.DO_NOTHING, db_column='section_no')
     subject_no = models.ForeignKey(Subject, models.DO_NOTHING, db_column='subject_no')
 
     class Meta:
         managed = False
         db_table = 'timetable'
-        unique_together = (('serial_no', 'section_no'),)
+        unique_together = (('timetalbe_no', 'section_no'),)
 
 
 class Type(models.Model):
@@ -556,3 +555,14 @@ class VoteRecord(models.Model):
     class Meta:
         managed = False
         db_table = 'vote_record'
+
+
+class TimetableCreate(models.Model):
+    serial_no = models.AutoField(primary_key=True)
+    create = models.ForeignKey(Account, models.DO_NOTHING)
+    create_time = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'timetable_create'
+

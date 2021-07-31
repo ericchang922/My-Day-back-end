@@ -21,16 +21,16 @@ class ProfileViewSet(ModelViewSet):
         try:
             account = Account.objects.get(user_id=uid)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.account)
+            return not_found(Msg.NotFound.account, request)
         except:
-            return err(Msg.Err.Account.get)
+            return err(Msg.Err.Account.get, 'US-A-001', request)
 
         response = {
             'userName': account.name,
             'photo': str(account.photo)
         }
 
-        return success(response)
+        return success(response, request)
 
     @action(detail=False, methods=['POST'])
     def edit_profile(self, request):
@@ -43,9 +43,9 @@ class ProfileViewSet(ModelViewSet):
         try:
             account = Account.objects.get(user_id=uid)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.account)
+            return not_found(Msg.NotFound.account, request)
         except:
-            return err(Msg.Err.Account.get)
+            return err(Msg.Err.Account.get, 'US-B-001', request)
 
         if name is not None:
             account.name = name
@@ -55,4 +55,4 @@ class ProfileViewSet(ModelViewSet):
 
         account.save()
 
-        return success()
+        return success(request=request)

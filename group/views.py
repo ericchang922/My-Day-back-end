@@ -392,6 +392,6 @@ class GroupViewSet(ModelViewSet):
                         content = f'{trigger_name[g.trigger_type]}{type_name}「{title}」'
                 group['logContent'] = content
                 group_content.append(group)
-            return success({'groupContent': group_content})
+            return success({'groupContent': group_content}, request)
         else:
-            return not_found(Msg.NotFound.group_log)
+            return not_found(Msg.NotFound.group_log, request)

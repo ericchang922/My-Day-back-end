@@ -17,98 +17,98 @@ class SettingViewSet(ModelViewSet):
         data = request.data
 
         uid = data.get('uid')
-        isSchedule = data.get('isSchedule')
-        isCountdown = data.get('isCountdown')
-        isGroup = data.get('isGroup')
-        isTemporary = data.get('isTemporary')
+        is_schedule = data.get('isSchedule')
+        is_countdown = data.get('isCountdown')
+        is_group = data.get('isGroup')
+        is_temporary = data.get('isTemporary')
 
         try:
             account = Account.objects.get(user_id=uid)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.account)
+            return not_found(Msg.NotFound.account, request)
         except:
-            return err(Msg.Err.Account.get, 'SE-A-001')
+            return err(Msg.Err.Account.get, 'SE-A-001', request)
 
-        if isSchedule is not None:
-            account.is_schedule_notice = isSchedule
+        if is_schedule is not None:
+            account.is_schedule_notice = is_schedule
 
-        if isCountdown is not None:
-            account.is_countdown_notice = isCountdown
+        if is_countdown is not None:
+            account.is_countdown_notice = is_countdown
 
-        if isGroup is not None:
-            account.is_group_notice = isGroup
+        if is_group is not None:
+            account.is_group_notice = is_group
 
-        if isTemporary is not None:
-            account.is_temporary_group_notice = isTemporary
+        if is_temporary is not None:
+            account.is_temporary_group_notice = is_temporary
 
         account.save()
 
-        return success()
+        return success(request=request)
 
     @action(detail=False, methods=['POST'])
     def theme(self, request):
         data = request.data
 
         uid = data.get('uid')
-        themeId = data.get('themeId')
+        theme_id = data.get('themeId')
 
         try:
             account = Account.objects.get(user_id=uid)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.account)
+            return not_found(Msg.NotFound.account, request)
         except:
-            return err(Msg.Err.Account.get, 'SE-A-002')
+            return err(Msg.Err.Account.get, 'SE-B-001', request)
 
-        if themeId is not None:
-            account.theme_id = themeId
+        if theme_id is not None:
+            account.theme_id = theme_id
 
         account.save()
 
-        return success()
+        return success(request=request)
 
     @action(detail=False, methods=['POST'])
     def privacy(self, request):
         data = request.data
 
         uid = data.get('uid')
-        isLocation = data.get('isLocation')
-        isPublic = data.get('isPublic')
+        is_location = data.get('isLocation')
+        is_public = data.get('isPublic')
 
         try:
             account = Account.objects.get(user_id=uid)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.account)
+            return not_found(Msg.NotFound.account, request)
         except:
-            return err(Msg.Err.Account.get,  'SE-A-003')
+            return err(Msg.Err.Account.get, 'SE-C-001', request)
 
-        if isLocation is not None:
-            account.is_location = isLocation
+        if is_location is not None:
+            account.is_location = is_location
 
-        if isPublic is not None:
-            account.is_public = isPublic
+        if is_public is not None:
+            account.is_public = is_public
 
         account.save()
 
-        return success()
+        return success(request=request)
 
     @action(detail=False, methods=['POST'])
     def friend_privacy(self, request):
         data = request.data
 
         uid = data.get('uid')
-        friendId = data.get('friendId')
-        isPublic = data.get('isPublic')
-        isTemporary = data.get('isTemporary')
+        friend_id = data.get('friendId')
+        is_public = data.get('isPublic')
+        is_temporary = data.get('isTemporary')
 
         try:
-            friend = Friend.objects.filter(user_id=uid, related_person=friendId)
+            friend = Friend.objects.filter(user_id=uid, related_person=friend_id)
         except:
-            return err(Msg.NotFound.friend)
+            return err(Msg.NotFound.friend, 'SE-D-001', request)
 
-        if isTemporary is not None:
-            friend.update(is_temporary_group=isTemporary)
+        if is_temporary is not None:
+            friend.update(is_temporary_group=is_temporary)
 
-        if isPublic is not None:
-            friend.update(is_public_timetable=isPublic)
+        if is_public is not None:
+            friend.update(is_public_timetable=is_public)
 
-        return success()
+        return success(request=request)
