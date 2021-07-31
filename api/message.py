@@ -1,5 +1,14 @@
 class Msg:
     class Err:
+        class Timetable:
+            create_create = '建立課表錯誤'
+            school_create = '建立學校錯誤'
+            personal_create = '建立個人課表錯誤'
+            section_create = '建立節次錯誤'
+            subject_create = '建立科目錯誤'
+            create = '建立課表內容錯誤'
+            time_create = '建立節次時間錯誤'
+
         class Account:
             get = '取得帳號錯誤'
             registered = '此email已被使用'
