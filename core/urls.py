@@ -23,6 +23,7 @@ from vote import views as vote_views
 from setting import views as setting_views
 # profile
 from user_profile import views as profile_views
+from api import views as api_views
 # timetable
 from timetable import views as timetable_views
 
@@ -47,8 +48,8 @@ router.register('profile', profile_views.ProfileViewSet)
 # timetable
 router.register('timetable', timetable_views.TimetableViewSet)
 
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
+    path('logs/', include('api.urls'))
 ]

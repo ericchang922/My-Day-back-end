@@ -50,12 +50,28 @@ class Msg:
             select = '查詢群組錯誤'
             # group_member
             member_read = '群組資料讀取錯誤'
+            friend_only = '僅能邀請好友'
+            already_invited = '已邀請過此人'
+            only_one_manager = '您是唯一管理者，需先指定另一位管理者才能退出'
+            already_joined = '已加入群組'
             # group_log
             log_create = '新增群組紀錄錯誤'
 
         class Friend:
             already_sent_request = '已送出邀請'
             already_best_friend = '已為摯友'
+
+        class StudyPlan:
+            at_least_one_subject = '至少要有一個科目'
+            already_existed = '此行程已有讀書計畫'
+            not_study_plan_schedule = '行程非讀書計畫行程'
+            only_share_with_one_group = '僅能分享一個群組'
+            has_been_shared = '已分享過給此群組'
+            has_been_canceled = '已取消分享'
+            already_studied = '已與群組一起讀過'
+            disconnect_group_first = '請先取消分享讀書計畫'
+            select_old = '請選擇尚未開始的讀書計畫'
+
     class NotFound:
         type = ''
         # account
@@ -77,17 +93,20 @@ class Msg:
         relation = '不存在的關係代碼'
         friend_request = '沒有邀請關係'
 
-
         # group
         group = '群組不存在'
         not_in_group = '用戶沒有此群組'  # group_member
         member_status = '不存在的狀態碼'
         group_log = '群組沒有紀錄'
         do_type = '不存在的行為類別'
+        user_has_left = '已退出群組'
+        member = '無此成員'
 
         # note
         note = '筆記不存在'
         user_note = '用戶沒有此筆記'
+        note_not_share = '此筆記沒有被分享，無法取消分享'
+        note_is_share = '此筆記原本已分享'
 
         # setting
         notice = '找不到通知設定'
