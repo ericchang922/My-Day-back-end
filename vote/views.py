@@ -324,8 +324,8 @@ class VoteViewSet(ModelViewSet):
             return err(Msg.Err.Vote.select, 'VO-E-002', request)  # -----------------------------------------------002
 
         vote_list = []
+        now = datetime.now()
         for i in vote:
-            now = datetime.now()
             end_time = i.end_time if i.end_time is not None else now
             if end_time >= now and i.end_time is None:
                 try:
@@ -478,8 +478,10 @@ class VoteViewSet(ModelViewSet):
             return err(Msg.Err.Vote.select, 'VO-H-002', request)  # -----------------------------------------------002
 
         vote_list = []
+        now = datetime.now()
         for i in vote:
-            if i.end_time < datetime.now():
+            end_time = i.end_time if i.end_time is not None else now
+            if end_time < datetime.now():
                 vote_no = i.serial_no
                 vote_option = VoteDateOption if i.option_type_id == 2 else VoteOption
 
