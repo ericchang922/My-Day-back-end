@@ -511,6 +511,7 @@ class VoteViewSet(ModelViewSet):
 
                 vote_list.append(
                     {
+                        'voteNum': i.serial_no,
                         'title': i.title,
                         'result': result,
                         'resultCount': result_count
