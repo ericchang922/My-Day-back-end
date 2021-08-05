@@ -48,12 +48,14 @@ class Msg:
 
         class Group:
             select = '查詢群組錯誤'
+            time = '開始時間需小於結束時間'
             # group_member
             member_read = '群組資料讀取錯誤'
             friend_only = '僅能邀請好友'
-            already_invited = '已邀請過此人'
+            already_invited = '已邀請'
             only_one_manager = '您是唯一管理者，需先指定另一位管理者才能退出'
             already_joined = '已加入群組'
+            must_choose_others = '需選擇其他成員'
             # group_log
             log_create = '新增群組紀錄錯誤'
 
@@ -101,6 +103,7 @@ class Msg:
         do_type = '不存在的行為類別'
         user_has_left = '已退出群組'
         member = '無此成員'
+        group_invite = '沒有此群組的邀請'
 
         # note
         note = '筆記不存在'
