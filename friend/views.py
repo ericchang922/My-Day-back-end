@@ -5,15 +5,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from api.response import *
-from api.message import Msg
-from api.models import Friend, Account, Relation, FriendList, GetFriend, PersonalTimetable
+from api.models import Friend, Account, Relation, PersonalTimetable
 from friend.serializers import FriendSerializer
 
 from datetime import datetime
 
 
 # Create your views here.
-
 class FriendViewSet(ModelViewSet):
     queryset = Friend.objects.filter(relation_id=0)
     serializer_class = FriendSerializer
@@ -35,7 +33,7 @@ class FriendViewSet(ModelViewSet):
 
             return success(request=request)
         except IntegrityError:
-            return err(Msg.Err.Friend.already_sent_request, err_code='FR-A-001', request=request)
+            return err(Msg.Err.Friend.already_sent_request, 'FR-A-001', request)
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.account, request)
 
@@ -63,7 +61,7 @@ class FriendViewSet(ModelViewSet):
                 invite.delete()
                 return success(request=request)
         else:
-            return not_found(Msg.NotFound.friend_request)
+            return not_found(Msg.NotFound.friend_request, request)
 
     @action(detail=False, methods=['DELETE'])
     def delete(self, request):
@@ -74,6 +72,7 @@ class FriendViewSet(ModelViewSet):
 
         user_friendship = Friend.objects.filter(user=uid, related_person=friend_id, relation_id__in=[1, 2])
         friend_friendship = Friend.objects.filter(related_person=uid, user=friend_id, relation_id__in=[1, 2])
+
         if user_friendship.exists() and friend_friendship.exists():
             user_friendship.delete()
             friend_friendship.delete()
@@ -97,7 +96,7 @@ class FriendViewSet(ModelViewSet):
         elif not friendship.exists():
             return not_found(Msg.NotFound.friend, request)
         else:
-            return err(Msg.Err.Friend.already_best_friend, err_code='FR-D-001', request=request)
+            return err(Msg.Err.Friend.already_best_friend, 'FR-D-001', request)
 
     @action(detail=False, methods=['PATCH'])
     def delete_best(self, request):
@@ -120,7 +119,7 @@ class FriendViewSet(ModelViewSet):
         uid = data.get('uid')
         friend_id = data.get('friendId')
 
-        friend = GetFriend.objects.filter(user_id=uid, related_person=friend_id, relation_id__in=[1, 2])
+        friend = Friend.objects.filter(user_id=uid, related_person=friend_id, relation_id__in=[1, 2])
         if friend.exists():
             personal_timetable = PersonalTimetable.objects.filter(user_id=friend_id,
                                                                   semester_start__lte=datetime.now(),
@@ -134,65 +133,61 @@ class FriendViewSet(ModelViewSet):
                 else personal_timetable.first().timetable_no.serial_no
 
             return success({
-                'photo': friend.first().photo,
-                'friendName': friend.first().name,
+                'photo': friend.first().related_person.photo,
+                'friendName': friend.first().related_person.name,
                 'timetableId': timetable_no,
-            }, request=request)
+            }, request)
         else:
-            return not_found(Msg.NotFound.friend)
+            return not_found(Msg.NotFound.friend, request)
 
     @action(detail=False)
     def friend_list(self, request):
         data = request.query_params
 
         uid = data.get('uid')
-
-        friend = FriendList.objects.filter(user_id=uid, relation_id=1)
+        friend = Friend.objects.filter(user_id=uid, relation_id=1)
         return success({
             'friend': [
                 {
-                    'photo': f.photo,
-                    'friendId': f.related_person,
-                    'friendName': f.name,
+                    'photo': f.related_person.photo,
+                    'friendId': f.related_person.pk,
+                    'friendName': f.related_person.name,
                     'relationId': f.relation_id,
                 }
                 for f in friend
             ]
-        }, request=request)
+        }, request)
 
     @action(detail=False)
     def best_list(self, request):
         data = request.query_params
 
         uid = data.get('uid')
-
-        friend = FriendList.objects.filter(user_id=uid, relation_id=2)
-
+        friend = Friend.objects.filter(user_id=uid, relation_id=2)
         return success({
             'friend': [
                 {
-                    'photo': f.photo,
-                    'friendId': f.related_person,
-                    'friendName': f.name,
+                    'photo': f.related_person.photo,
+                    'friendId': f.related_person.pk,
+                    'friendName': f.related_person.name,
                 }
                 for f in friend
             ]
-        }, request=request)
+        }, request)
 
     @action(detail=False)
     def make_invite_list(self, request):
         data = request.query_params
 
         uid = data.get('uid')
-
-        friend = FriendList.objects.filter(user_id=uid, relation_id=4)
+        friend = Friend.objects.filter(user_id=uid, relation_id=4)
         return success({
             'friend': [
                 {
-                    'photo': f.photo,
-                    'friendId': f.related_person,
-                    'friendName': f.name,
+                    'photo': f.related_person.photo,
+                    'friendId': f.related_person.pk,
+                    'friendName': f.related_person.name,
                 }
                 for f in friend
             ]
-        }, request=request)
+        }, request)
