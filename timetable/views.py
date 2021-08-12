@@ -219,3 +219,71 @@ class TimetableViewSet(ModelViewSet):
         create.delete()
 
         return success()
+
+    @action(detail=False)
+    def get_timetable_list(self, request):
+        data = request.query_params
+
+        uid = data['uid']
+
+        try:
+            p_timetable = PersonalTimetable.objects.filter(user_id=uid).all()
+        except:
+            return err(Msg.Err.Timetable.get_timetable, 'TI-D-001', request)
+
+        p_timetable_list = []
+        try:
+            for i in p_timetable:
+                p_timetable_list.append(
+                    {
+                        'schoolYear': i.semester[:3],
+                        'semester': i.semester[4:],
+                        'timetableNo': i.timetable_no
+                    }
+                )
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.timetable, request)
+        except:
+            return err(Msg.Err.Timetable.get_timetable_list, 'TI-D-002', request)
+
+        response = {'timetable': p_timetable_list}
+        return success(response, request)
+
+    @action(detail=False)
+    def get_timetable(self, request):
+        data = request.query_params
+
+        uid = data['uid']
+        school_year = data['schoolYear']
+        semester = data['semester']
+        f_semester = f'{school_year}-{semester}'
+        subject = []
+
+        try:
+            p_timetable = PersonalTimetable.objects.get(user_id=uid, semester=f_semester)
+        except:
+            return err(Msg.Err.Timetable.get_timetable, 'TI-E-001', request)
+
+        classtime = ClassTime.objects.filter(school_no=p_timetable.school_no.serial_no)
+
+        for i in classtime:
+            timetable = Timetable.objects.get(timetable_no=p_timetable.timetable_no, section_no=i.section_no.section_no)
+            subject.append(
+                {
+                    'subjectName': timetable.subject_no.subject_name,
+                    'startTime': i.start,
+                    'endTime': i.end,
+                    'week': timetable.section_no.weekday,
+                    'section': timetable.section_no.section
+                }
+            )
+        response = {
+            'school': p_timetable.school_no.school_name,
+            'schoolYear': p_timetable.semester[:3],
+            'semester': p_timetable.semester[4:],
+            'startDate': p_timetable.semester_start,
+            'endDate': p_timetable.semester_end,
+            'subject': subject
+        }
+        response = {'timetable': response}
+        return success(response, request)
