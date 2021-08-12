@@ -26,7 +26,7 @@ class Account(models.Model):
 
 
 class ClassTime(models.Model):
-    school_no = models.ForeignKey('School', models.DO_NOTHING, db_column='school_no')
+    school_no = models.OneToOneField('School', models.DO_NOTHING, db_column='school_no', primary_key=True)
     section_no = models.ForeignKey('Section', models.DO_NOTHING, db_column='section_no')
     start = models.TimeField()
     end = models.TimeField()
@@ -51,13 +51,14 @@ class Friend(models.Model):
     related_person = models.ForeignKey(Account, models.DO_NOTHING, db_column='related_person',
                                        related_name='related_person')
     relation = models.ForeignKey('Relation', models.DO_NOTHING)
-    is_temporary_group = models.IntegerField(blank=True, null=True,default=1)
-    is_public_timetable = models.IntegerField(blank=True, null=True,default=1)
+    is_temporary_group = models.IntegerField(blank=True, null=True, default=1)
+    is_public_timetable = models.IntegerField(blank=True, null=True, default=1)
 
     class Meta:
         managed = True
         db_table = 'friend'
         unique_together = ('user', 'related_person')
+
 
 class FriendList(models.Model):
     user_id = models.CharField(max_length=255, primary_key=True)
@@ -71,8 +72,9 @@ class FriendList(models.Model):
         db_table = 'friend_list'
         unique_together = ('user_id', 'related_person')
 
+
 class GetFriend(models.Model):
-    user_id = models.CharField(max_length=255,primary_key=True)
+    user_id = models.CharField(max_length=255, primary_key=True)
     related_person = models.CharField(max_length=255)
     relation_id = models.IntegerField()
     name = models.CharField(max_length=255, blank=True, null=True)
@@ -83,6 +85,7 @@ class GetFriend(models.Model):
         managed = False  # Created from a view. Don't remove.
         db_table = 'get_friend'
         unique_together = ('user_id', 'related_person')
+
 
 class GroupVote(models.Model):
     user_id = models.CharField(max_length=255)
@@ -98,7 +101,8 @@ class GroupVote(models.Model):
     class Meta:
         managed = False  # Created from a view. Don't remove.
         db_table = 'group_vote'
-        unique_together = ('user_id', 'group_no','vote_num')
+        unique_together = ('user_id', 'group_no', 'vote_num')
+
 
 class GetStudyplan(models.Model):
     create_id = models.CharField(max_length=255, blank=True, null=True)
@@ -107,7 +111,8 @@ class GetStudyplan(models.Model):
     plan_no = models.IntegerField(primary_key=True)
     plan_num = models.IntegerField()
     schedule_name = models.CharField(max_length=255)
-    field_date = models.DateField(db_column='_date', blank=True, null=True)  # Field renamed because it started with '_'.
+    field_date = models.DateField(db_column='_date', blank=True,
+                                  null=True)  # Field renamed because it started with '_'.
     schedule_start = models.DateTimeField()
     schedule_end = models.DateTimeField()
     subject = models.CharField(max_length=255, blank=True, null=True)
@@ -138,6 +143,7 @@ class GetTemporaryInvite(models.Model):
         db_table = 'get_temporary_invite'
         unique_together = ('group_no', 'user_id')
 
+
 class Group(models.Model):
     serial_no = models.AutoField(primary_key=True)
     group_name = models.CharField(max_length=255)
@@ -164,6 +170,7 @@ class GroupScheduleTime(models.Model):
         managed = False  # Created from a view. Don't remove.
         db_table = 'group_schedule_time'
 
+
 class GroupInviteList(models.Model):
     group_no = models.IntegerField(primary_key=True)
     user_id = models.CharField(max_length=255)
@@ -179,6 +186,7 @@ class GroupInviteList(models.Model):
         managed = False  # Created from a view. Don't remove.
         db_table = 'group_invite_list'
         unique_together = ('group_no', 'user_id')
+
 
 class GroupList(models.Model):
     group_no = models.IntegerField()
@@ -242,7 +250,7 @@ class GroupMember(models.Model):
     user = models.ForeignKey(Account, models.DO_NOTHING)
     join_time = models.DateTimeField(default=django.utils.timezone.now)
     status = models.ForeignKey('MemberStatus', models.DO_NOTHING)
-    inviter = models.ForeignKey(Account, models.DO_NOTHING,related_name='inviter')
+    inviter = models.ForeignKey(Account, models.DO_NOTHING, related_name='inviter')
 
     class Meta:
         managed = False
@@ -263,20 +271,23 @@ class GetGroupNoVote(models.Model):
         db_table = 'get_group_no_vote'
         unique_together = ('group_no', 'user_id')
 
+
 class GroupStudyplanList(models.Model):
-    user_id = models.CharField(max_length=255,primary_key=True)
+    user_id = models.CharField(max_length=255, primary_key=True)
     status_id = models.IntegerField()
     group_no = models.IntegerField(blank=True, null=True)
     schedule_name = models.CharField(max_length=255)
     studyplan_num = models.IntegerField()
-    field_date = models.DateField(db_column='_date', blank=True, null=True)  # Field renamed because it started with '_'.
+    field_date = models.DateField(db_column='_date', blank=True,
+                                  null=True)  # Field renamed because it started with '_'.
     schedule_start = models.DateTimeField()
     schedule_end = models.DateTimeField()
 
     class Meta:
         managed = False  # Created from a view. Don't remove.
         db_table = 'group_studyplan_list'
-        unique_together = ('user_id', 'group_no','studyplan_num')
+        unique_together = ('user_id', 'group_no', 'studyplan_num')
+
 
 class MemberStatus(models.Model):
     status_id = models.IntegerField(primary_key=True)
@@ -428,11 +439,13 @@ class StudyPlan(models.Model):
         managed = False
         db_table = 'study_plan'
 
+
 class StudyplanList(models.Model):
     create_id = models.CharField(max_length=255, blank=True, null=True)
     studyplan_num = models.IntegerField(primary_key=True)
     schedule_name = models.CharField(max_length=255)
-    field_date = models.DateField(db_column='_date', blank=True, null=True)  # Field renamed because it started with '_'.
+    field_date = models.DateField(db_column='_date', blank=True,
+                                  null=True)  # Field renamed because it started with '_'.
     schedule_start = models.DateTimeField()
     schedule_end = models.DateTimeField()
     connect_group_no = models.IntegerField(blank=True, null=True)
@@ -449,6 +462,7 @@ class Subject(models.Model):
     class Meta:
         managed = False
         db_table = 'subject'
+
 
 class TemporaryList(models.Model):
     group_no = models.IntegerField(primary_key=True)
@@ -480,14 +494,14 @@ class Theme(models.Model):
 
 
 class Timetable(models.Model):
-    timetalbe_no = models.ForeignKey('TimetableCreate', models.DO_NOTHING, db_column='timetalbe_no')
+    timetable_no = models.OneToOneField('TimetableCreate', models.DO_NOTHING, db_column='timetable_no', primary_key=True)
     section_no = models.ForeignKey(Section, models.DO_NOTHING, db_column='section_no')
     subject_no = models.ForeignKey(Subject, models.DO_NOTHING, db_column='subject_no')
 
     class Meta:
         managed = False
         db_table = 'timetable'
-        unique_together = (('timetalbe_no', 'section_no'),)
+        unique_together = (('timetable_no', 'section_no'),)
 
 
 class Type(models.Model):
@@ -570,4 +584,37 @@ class TimetableCreate(models.Model):
     class Meta:
         managed = False
         db_table = 'timetable_create'
+
+
+class ShareLog(models.Model):
+    serial_no = models.AutoField(primary_key=True)
+    do_time = models.DateTimeField()
+    user = models.ForeignKey(Account, models.DO_NOTHING, db_column='user_id', related_name='user')
+    share_to = models.ForeignKey(Account, models.DO_NOTHING, db_column='share_to', related_name='share_to')
+    timetable_no = models.ForeignKey('TimetableCreate', models.DO_NOTHING, db_column='timetable_no')
+    semester = models.CharField(max_length=255)
+    share_type_id = models.ForeignKey('ShareType', models.DO_NOTHING, db_column='share_type_id')
+
+    class Meta:
+        managed = False
+        db_table = 'share_log'
+
+
+class ShareType(models.Model):
+    share_type_id = models.IntegerField(primary_key=True)
+    share_type_name = models.CharField(max_length=10)
+
+    class Meta:
+        managed = False
+        db_table = 'share_type'
+
+
+class Sharecode(models.Model):
+    code = models.CharField(max_length=8, primary_key=True)
+    user = models.ForeignKey(Account, models.DO_NOTHING, db_column='user_id', null=True)
+    timetable_no = models.ForeignKey('TimetableCreate', models.DO_NOTHING, db_column='timetable_no', null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'sharecode'
 
