@@ -8,6 +8,16 @@ class Msg:
             subject_create = '建立科目錯誤'
             create = '建立課表內容錯誤'
             time_create = '建立節次時間錯誤'
+            update = '更新課表內容錯誤'
+            information_update = '更新課表資訊錯誤'
+            section_update = '更新節次錯誤'
+            get_school = '取得學校錯誤'
+            get_classtime = '取得課程錯誤'
+            get_time = '取得節次錯誤'
+            get_timetable = '取得課表錯誤'
+            get_timetable_list = '取得課表列表錯誤'
+            get_sharecode = '分享碼錯誤'
+
 
         class Account:
             get = '取得帳號錯誤'
