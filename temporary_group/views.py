@@ -2,17 +2,17 @@ from datetime import datetime
 
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.response import Response
 
+from api.response import *
+from api.models import Schedule, TemporaryList, PersonalSchedule, GroupMember, Group, GroupScheduleTime
 from group.views import new_group_request
-from temporary_group.serializers import ScheduleSerializer, CreateTmpGroupRequestSerializer
-from api.models import Schedule, TemporaryList, GetTemporaryInvite, PersonalSchedule
+from temporary_group.serializers import TemporaryGroupSerializer, CreateTmpGroupRequestSerializer
 
 
 # Create your views here.
 class TemporaryGroupViewSet(ModelViewSet):
-    queryset = Schedule.objects.all()
-    serializer_class = ScheduleSerializer
+    queryset = Group.objects.filter(serial_no=0)
+    serializer_class = TemporaryGroupSerializer
 
     @action(detail=False, methods=['POST'])
     def create_group(self, request):
@@ -21,19 +21,17 @@ class TemporaryGroupViewSet(ModelViewSet):
         serializer = CreateTmpGroupRequestSerializer(data=data)
         serializer.is_valid(raise_exception=True)
 
-        schedule_start_time = serializer.validated_data.pop('scheduleStartTime')
-        schedule_end_time = serializer.validated_data.pop('scheduleEndTime')
+        schedule_start_time = serializer.validated_data.pop('schedule_start')
+        schedule_end_time = serializer.validated_data.pop('schedule_end')
         if schedule_start_time > schedule_end_time:
-            return Response({'response': False, 'message': '開始時間需小於結束時間'})
+            return err(Msg.Err.Group.time, 'TMP-A-001', request)
 
         place = serializer.validated_data.pop('place')
         serializer.validated_data.update({'is_temporary_group': 1})
 
         result = new_group_request(serializer.validated_data)
-        if result == -1:
-            return Response({'response': False, 'message': '帳號不存在'})
-        elif result == -2:
-            return Response({'response': False, 'message': '僅能邀請好友'})
+        if isinstance(result, str):
+            return not_found(result, request)
 
         group = result
         schedule_name = serializer.validated_data['group_name']
@@ -43,22 +41,18 @@ class TemporaryGroupViewSet(ModelViewSet):
                                            type_id=type_id, schedule_start=schedule_start_time,
                                            schedule_end=schedule_end_time, place=place)
 
-        PersonalSchedule.objects.create(user_id=founder, schedule_no=schedule, is_notice=0,
-                                        is_countdown=0, is_hidden=0)
-        return Response({
-            'response': True,
-            'message': '成功'
-        })
+        PersonalSchedule.objects.create(user_id=founder, schedule_no=schedule, is_notice=1,
+                                        is_countdown=1, is_hidden=0)
+        return success(request=request)
 
     @action(detail=False)
     def temporary_list(self, request):
         data = request.query_params
 
         uid = data.get('uid')
-        tmp_group = TemporaryList.objects.filter(user_id=uid, status_id__in=[1, 4],
-                                                 is_temporary_group=1, end_time__gte=datetime.now())
-
-        return Response({
+        tmp_group = TemporaryList.objects.filter(user_id=uid, status_id__in=[1, 4], is_temporary_group=1,
+                                                 end_time__gt=datetime.now()).order_by('-start_time')
+        return success({
             'temporaryContent': [
                 {
                     'groupId': g.group_no,
@@ -70,17 +64,16 @@ class TemporaryGroupViewSet(ModelViewSet):
                 }
                 for g in tmp_group
             ]
-        })
+        }, request)
 
     @action(detail=False)
     def invite_list(self, request):
         data = request.query_params
 
         uid = data.get('uid')
-        tmp_group = TemporaryList.objects.filter(user_id=uid, status_id=2,
-                                                 is_temporary_group=1, end_time__gte=datetime.now())
-
-        return Response({
+        tmp_group = TemporaryList.objects.filter(user_id=uid, status_id=2, is_temporary_group=1,
+                                                 end_time__gt=datetime.now()).order_by('-start_time')
+        return success({
             'temporaryContent': [
                 {
                     'groupId': g.group_no,
@@ -92,33 +85,39 @@ class TemporaryGroupViewSet(ModelViewSet):
                 }
                 for g in tmp_group
             ]
-        })
+        }, request)
 
     @action(detail=False)
     def get_invite(self, request):
         data = request.query_params
 
+        uid = data.get('uid')
         group_num = data.get('groupNum')
-        tmp_group_invite = GetTemporaryInvite.objects.filter(group_no=group_num)
 
-        if tmp_group_invite.exists():
-            return Response({
-                'title': tmp_group_invite.first().group_name,
-                'startTime': tmp_group_invite.first().found_time,
-                'endTime': tmp_group_invite.first().schedule_end,
-                'founderPhoto': tmp_group_invite.first().founder_photo,
-                'founderName': tmp_group_invite.first().founder_name,
+        tmp_group = GroupScheduleTime.objects.filter(serial_no=group_num, is_temporary_group=1,
+                                                     end_time__gt=datetime.now())
+        user_is_invited = GroupMember.objects.filter(group_no=group_num, user_id=uid, status_id=2)
+
+        if tmp_group.exists() and user_is_invited.exists():
+            schedule = Schedule.objects.filter(connect_group_no=group_num)
+            group = Group.objects.get(serial_no=group_num)
+            group_member = GroupMember.objects.filter(group_no=group_num)
+            return success({
+                'title': group.group_name,
+                'startTime': schedule.order_by('schedule_start').first().schedule_start,
+                'endTime': schedule.order_by('-schedule_end').first().schedule_end,
+                'founderPhoto': group.founder.photo,
+                'founderName': group.founder.name,
                 'member': [
                     {
-                        'memberPhoto': g.member_photo,
-                        'memberName': g.member_name,
-                        'statusId': g.status_id,
+                        'memberPhoto': g.user.photo,
+                        'memberName': g.user.name,
+                        'statusId': g.status_id
                     }
-                    for g in tmp_group_invite
+                    for g in group_member
                 ]
-            })
+            }, request)
+        elif not tmp_group.exists():
+            return not_found(Msg.NotFound.group, request)
         else:
-            return Response({
-                'response': False,
-                'message': '沒有此玩聚邀請'
-            })
+            return not_found(Msg.NotFound.group_invite, request)

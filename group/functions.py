@@ -1,10 +1,15 @@
+from django.core.exceptions import ObjectDoesNotExist
+
+from api.message import Msg
 from api.models import Account, Friend, GroupMember
 from group.serializers import CreateGroupRequestSerializer
 
 
 def new_group_request(data):
-    if not Account.objects.filter(user_id=data['founder']).exists():
-        return -1
+    try:
+        Account.objects.get(user_id=data['founder'])
+    except ObjectDoesNotExist:
+        return Msg.NotFound.account
 
     serializer = CreateGroupRequestSerializer(data=data)
     serializer.is_valid(raise_exception=True)
@@ -15,7 +20,7 @@ def new_group_request(data):
     for friend in friends:
         if not Friend.objects.filter(user_id=founder, related_person=friend['friendId'],
                                      relation_id__in=[1, 2]).exists():
-            return -2
+            return Msg.NotFound.friend
 
     group = serializer.save()
     group_members = [
