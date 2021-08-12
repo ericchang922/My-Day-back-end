@@ -1,11 +1,25 @@
+import string
+import random
+
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
 from django.db.models import ObjectDoesNotExist
 from datetime import datetime
 
-from api.models import PersonalTimetable, Timetable, School, Subject, Section, ClassTime, TimetableCreate
+from api.models import PersonalTimetable, Timetable, School, Subject, Section, ClassTime, TimetableCreate, ShareLog, \
+    Account, ShareType, Sharecode
 from api.response import *
 from timetable.serializers import TimetableSerializer
+
+week_name = {
+    '星期一': 100,
+    '星期二': 200,
+    '星期三': 300,
+    '星期四': 400,
+    '星期五': 500,
+    '星期六': 600,
+    '星期日': 700
+}
 
 
 # Create your views here.
@@ -46,35 +60,26 @@ class TimetableViewSet(ModelViewSet):
             end_time = i.get('endTime')
             section = i.get('section')
             week = i.get('week')
-            week_name = {
-                '星期一': 100,
-                '星期二': 200,
-                '星期三': 300,
-                '星期四': 400,
-                '星期五': 500,
-                '星期六': 600,
-                '星期日': 700
-            }
             try:
-                section = Section.objects.get(weekday=i.get('week'), section=i.get('section'))
+                section_db = Section.objects.get(weekday=week, section=section)
             except ObjectDoesNotExist:
                 section_no = week_name[week] + section
-                section = Section.objects.create(section_no=section_no, weekday=i.get('week'), section=i.get('section'))
+                section_db = Section.objects.create(section_no=section_no, weekday=week, section=section)
             except:
                 return err(Msg.Err.Timetable.section_create, 'TI-A-004', request)
             try:
-                subject = Subject.objects.get(subject_name=i.get('subjectName'))
+                subject_db = Subject.objects.get(subject_name=subject_name)
             except ObjectDoesNotExist:
-                subject = Subject.objects.create(subject_name=i.get('subjectName'))
+                subject_db = Subject.objects.create(subject_name=subject_name)
             except:
                 return err(Msg.Err.Timetable.subject_create, 'TI-A-005', request)
             try:
-                Timetable.objects.create(timetalbe_no=timetable, section_no=section, subject_no=subject)
+                Timetable.objects.create(timetable_no_id=timetable.serial_no, section_no=section_db,
+                                         subject_no=subject_db)
             except:
                 return err(Msg.Err.Timetable.create, 'TI-A-006', request)
             try:
-                ClassTime.objects.create(school_no=school, section_no=section, start=i.get('startTime'),
-                                         end=i.get('endTime'))
+                ClassTime.objects.create(school_no=school, section_no=section_db, start=start_time, end=end_time)
             except:
                 return err(Msg.Err.Timetable.create, 'TI-A-007', request)
 
