@@ -476,3 +476,110 @@ class TimetableViewSet(ModelViewSet):
 
         ShareLog.objects.get(share_to=uid, timetable_no=timetable_no).delete()
         return success(request=request)
+
+    @action(detail=False, methods=['POST'])
+    def get_sharecode(self, request):
+        data = request.data
+
+        uid = data['uid']
+        school_year = data['schoolYear']
+        semester = data['semester']
+        f_semester = f'{school_year}-{semester}'
+
+        try:
+            p_timetable = PersonalTimetable.objects.get(user_id=uid, semester=f_semester)
+        except:
+            return err(Msg.Err.Timetable.get_timetable, 'TI-K-001', request)
+        try:
+            sharecode = Sharecode.objects.get(user_id=uid, timetable_no=p_timetable.timetable_no)
+            code = sharecode.code
+        except ObjectDoesNotExist:
+            def create_random():
+                rand = ''
+                for i in range(8):
+                    rand += str(random.choice(string.ascii_letters + string.digits))
+                return rand
+
+            is_not_created = True
+            while is_not_created:
+                code = create_random()
+                try:
+                    Sharecode.objects.get(code=code)
+                except ObjectDoesNotExist:
+                    Sharecode.objects.create(code=code, user_id=uid, timetable_no=p_timetable.timetable_no)
+                    is_not_created = False
+
+        response = {'sharecode': code}
+        return success(response, request)
+
+    @action(detail=False, methods=['POST'])
+    def sharecode_accept_timetable(self, request):
+        data = request.data
+
+        uid = data['uid']
+        share_code = data['shareCode']
+
+        try:
+            sharecode = Sharecode.objects.get(code=share_code)
+        except:
+            return err(Msg.Err.Timetable.get_sharecode, 'TI-L-001', request)
+
+        timetable = TimetableCreate.objects.create(create_id=uid, create_time=datetime.now())
+
+        old_personal_timetable = PersonalTimetable.objects.get(user_id=sharecode.user,
+                                                               timetable_no=sharecode.timetable_no)
+
+        school = School.objects.create(school_name=old_personal_timetable.school_no.school_name)
+
+        PersonalTimetable.objects.create(user_id=uid, semester=old_personal_timetable.semester, school_no=school,
+                                         semester_start=old_personal_timetable.semester_start,
+                                         semester_end=old_personal_timetable.semester_end,
+                                         timetable_no=timetable)
+
+        subject = []
+
+        old_classtime = ClassTime.objects.filter(school_no=old_personal_timetable.school_no.serial_no)
+        for i in old_classtime:
+            old_timetable = Timetable.objects.get(timetable_no=old_personal_timetable.timetable_no,
+                                                  section_no=i.section_no.section_no)
+            subject.append(
+                {
+                    'subjectName': old_timetable.subject_no.subject_name,
+                    'startTime': i.start,
+                    'endTime': i.end,
+                    'week': old_timetable.section_no.weekday,
+                    'section': old_timetable.section_no.section
+                }
+            )
+
+        print(subject)
+        for i in subject:
+            subject_name = i.get('subjectName')
+            start_time = i.get('startTime')
+            end_time = i.get('endTime')
+            section = i.get('section')
+            week = i.get('week')
+            try:
+                section_db = Section.objects.get(weekday=week, section=section)
+            except ObjectDoesNotExist:
+                section_no = week_name[week] + section
+                section_db = Section.objects.create(section_no=section_no, weekday=week, section=section)
+            except:
+                return err(Msg.Err.Timetable.section_create, 'TI-L-002', request)
+            try:
+                subject_db = Subject.objects.get(subject_name=subject_name)
+            except ObjectDoesNotExist:
+                subject_db = Subject.objects.create(subject_name=subject_name)
+            except:
+                return err(Msg.Err.Timetable.subject_create, 'TI-L-003', request)
+            try:
+                Timetable.objects.create(timetable_no_id=timetable.serial_no, section_no=section_db,
+                                         subject_no=subject_db)
+            except:
+                return err(Msg.Err.Timetable.create, 'TI-L-004', request)
+            try:
+                ClassTime.objects.create(school_no=school, section_no=section_db, start=start_time, end=end_time)
+            except:
+                return err(Msg.Err.Timetable.create, 'TI-L-005', request)
+
+        return success(request=request)
