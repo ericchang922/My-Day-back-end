@@ -287,3 +287,72 @@ class TimetableViewSet(ModelViewSet):
         }
         response = {'timetable': response}
         return success(response, request)
+
+    @action(detail=False)
+    def main_timetable_list(self, request):
+        data = request.query_params
+
+        uid = data['uid']
+        p_timetable_list = []
+        try:
+            p_timetable = PersonalTimetable.objects.filter(user_id=uid)
+        except:
+            return err(Msg.Err.Timetable.get_timetable, 'TI-F-001', request)
+
+        for i in p_timetable:
+            one_classtime = ClassTime.objects.filter(school_no=i.school_no.serial_no)
+            subject = []
+            for t in one_classtime:
+                timetable = Timetable.objects.get(timetable_no=i.timetable_no, section_no=t.section_no.section_no)
+                subject.append(
+                    {
+                        'subjectName': timetable.subject_no.subject_name,
+                        'startTime': t.start,
+                        'endTime': t.end,
+                        'week': timetable.section_no.weekday,
+                        'section': timetable.section_no.section
+                    }
+
+                )
+            p_timetable_list.append(
+                {
+                    'schoolYear': i.semester[:3],
+                    'semester': i.semester[4:],
+                    'startDate': i.semester_start,
+                    'endDate': i.semester_end,
+                    'subject': subject
+                }
+            )
+        response = {'timetable': p_timetable_list}
+        return success(response, request)
+
+    @action(detail=False, methods=['POST'])
+    def edit_timetable_information(self, request):
+        data = request.data
+
+        uid = data['uid']
+        timetable_no = data['timetableNo']
+        school = data['school']
+        school_year = data['schoolYear']
+        semester = data['semester']
+        f_semester = f'{school_year}-{semester}'
+        start_date = data['startDate']
+        end_date = data['endDate']
+
+        try:
+            p_timetable = PersonalTimetable.objects.filter(user_id=uid, timetable_no_id=timetable_no)
+        except:
+            return err(Msg.Err.Timetable.get_timetable, 'TI-G-001', request)
+
+        get_school = School.objects.filter(serial_no=p_timetable[0].school_no.serial_no)
+
+        if school is not None:
+            get_school.update(school_name=school)
+        if start_date is not None:
+            p_timetable.update(semester_start=start_date)
+        if end_date is not None:
+            p_timetable.update(semester_end=end_date)
+        if school_year and semester is not None:
+            p_timetable.update(semester=f_semester)
+
+        return success()
