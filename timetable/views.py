@@ -389,3 +389,90 @@ class TimetableViewSet(ModelViewSet):
         get_share.delete()
 
         return success()
+
+    @action(detail=False, methods=['POST'])
+    def accept_timetable_list(self, request):
+        data = request.data
+
+        uid = data['uid']
+        school_year = data['schoolYear']
+        semester = data['semester']
+        f_semester = f'{school_year}-{semester}'
+
+        share = ShareLog.objects.get(share_to=uid, semester=f_semester)
+
+        response = {
+            'friendName': share.user.name,
+            'timetableNo': share.timetable_no.serial_no,
+            'photo': share.user.photo
+        }
+        response = {'accept_timetable_list': response}
+        return success(response, request)
+
+    @action(detail=False, methods=['POST'])
+    def accept_timetable(self, request):
+        data = request.data
+
+        uid = data['uid']
+        timetable_no = data['timetableNo']
+
+        share = ShareLog.objects.get(share_to=uid, timetable_no=timetable_no)
+
+        timetable = TimetableCreate.objects.create(create_id=uid, create_time=datetime.now())
+
+        old_personal_timetable = PersonalTimetable.objects.get(user_id=share.user, timetable_no=timetable_no)
+
+        school = School.objects.create(school_name=old_personal_timetable.school_no.school_name)
+
+        PersonalTimetable.objects.create(user_id=uid, semester=old_personal_timetable.semester, school_no=school,
+                                         semester_start=old_personal_timetable.semester_start,
+                                         semester_end=old_personal_timetable.semester_end,
+                                         timetable_no=timetable)
+
+        subject = []
+
+        old_classtime = ClassTime.objects.filter(school_no=old_personal_timetable.school_no.serial_no)
+        for i in old_classtime:
+            old_timetable = Timetable.objects.get(timetable_no=old_personal_timetable.timetable_no,
+                                                  section_no=i.section_no.section_no)
+            subject.append(
+                {
+                    'subjectName': old_timetable.subject_no.subject_name,
+                    'startTime': i.start,
+                    'endTime': i.end,
+                    'week': old_timetable.section_no.weekday,
+                    'section': old_timetable.section_no.section
+                }
+            )
+
+        for i in subject:
+            subject_name = i.get('subjectName')
+            start_time = i.get('startTime')
+            end_time = i.get('endTime')
+            section = i.get('section')
+            week = i.get('week')
+            try:
+                section_db = Section.objects.get(weekday=week, section=section)
+            except ObjectDoesNotExist:
+                section_no = week_name[week] + section
+                section_db = Section.objects.create(section_no=section_no, weekday=week, section=section)
+            except:
+                return err(Msg.Err.Timetable.section_create, 'TI-J-004', request)
+            try:
+                subject_db = Subject.objects.get(subject_name=subject_name)
+            except ObjectDoesNotExist:
+                subject_db = Subject.objects.create(subject_name=subject_name)
+            except:
+                return err(Msg.Err.Timetable.subject_create, 'TI-J-005', request)
+            try:
+                Timetable.objects.create(timetable_no_id=timetable.serial_no, section_no=section_db,
+                                         subject_no=subject_db)
+            except:
+                return err(Msg.Err.Timetable.create, 'TI-J-006', request)
+            try:
+                ClassTime.objects.create(school_no=school, section_no=section_db, start=start_time, end=end_time)
+            except:
+                return err(Msg.Err.Timetable.create, 'TI-J-007', request)
+
+        ShareLog.objects.get(share_to=uid, timetable_no=timetable_no).delete()
+        return success(request=request)
