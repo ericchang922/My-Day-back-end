@@ -254,17 +254,19 @@ class GroupViewSet(ModelViewSet):
         data = request.query_params
 
         uid = data.get('uid')
-        group = GroupList.objects.filter(user_id=uid, status_id__in=[1, 4],
-                                         is_temporary_group=0).order_by('-join_time')
+
+        groups = Group.objects.filter(is_temporary_group=0)
+        group_list = GroupMember.objects.filter(user_id=uid, status_id__in=[1, 4],
+                                                group_no__in=groups.values('serial_no')).order_by('-join_time')
         return success({
             'groupContent': [
                 {
-                    'groupID': g.group_no,
-                    'title': g.group_name,
-                    'typeId': g.type_id,
-                    'peopleCount': g.cnt,
+                    'groupID': g.group_no.pk,
+                    'title': g.group_no.group_name,
+                    'typeId': g.group_no.type.pk,
+                    'peopleCount': GroupMember.objects.filter(group_no=g.group_no, status_id__in=[1, 4]).count(),
                 }
-                for g in group
+                for g in group_list
             ]
         }, request)
 
@@ -273,18 +275,20 @@ class GroupViewSet(ModelViewSet):
         data = request.query_params
 
         uid = data.get('uid')
-        group = GroupList.objects.filter(user_id=uid, status_id=2,
-                                         is_temporary_group=0).order_by('-join_time')
+
+        groups = Group.objects.filter(is_temporary_group=0)
+        group_list = GroupMember.objects.filter(user_id=uid, status_id=2,
+                                                group_no__in=groups.values('serial_no')).order_by('-join_time')
         return success({
             'groupContent': [
                 {
-                    'groupId': g.group_no,
-                    'title': g.group_name,
-                    'typeId': g.type_id,
-                    'inviterPhoto': g.inviter_photo,
-                    'inviterName': g.inviter_name
+                    'groupId': g.group_no.pk,
+                    'title': g.group_no.group_name,
+                    'typeId': g.group_no.type.pk,
+                    'inviterPhoto': g.inviter.photo,
+                    'inviterName': g.inviter.name
                 }
-                for g in group
+                for g in group_list
             ]
         }, request)
 
