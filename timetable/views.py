@@ -356,3 +356,36 @@ class TimetableViewSet(ModelViewSet):
             p_timetable.update(semester=f_semester)
 
         return success()
+
+    @action(detail=False, methods=['POST'])
+    def share_timetable(self, request):
+        data = request.data
+
+        uid = data['uid']
+        timetable_no = data['timetableNo']
+        share_type_id = data['shareTypeId']
+        to_id = data['toId']
+        school_year = data['schoolYear']
+        semester = data['semester']
+        f_semester = f'{school_year}-{semester}'
+
+        account = Account.objects.get(user_id=to_id)
+        timetable_serial = TimetableCreate.objects.get(serial_no=timetable_no)
+        share_type = ShareType.objects.get(share_type_id=share_type_id)
+
+        ShareLog.objects.create(do_time=datetime.now(), user_id=uid, share_to=account, timetable_no=timetable_serial,
+                                semester=f_semester, share_type_id=share_type)
+
+        return success()
+
+    @action(detail=False, methods=['POST'])
+    def delete_accept_timetable(self, request):
+        data = request.data
+
+        uid = data['uid']
+        timetable_no = data['timetableNo']
+
+        get_share = ShareLog.objects.get(user_id=uid, timetable_no=timetable_no)
+        get_share.delete()
+
+        return success()
