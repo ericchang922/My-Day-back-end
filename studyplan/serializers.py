@@ -11,11 +11,12 @@ class StudyPlanSerializer(ModelSerializer):
 
 
 class StudyPlanContentSerializer(serializers.Serializer):
-    subject = serializers.CharField(required=True)
-    plan_start = serializers.DateTimeField(required=True)
-    plan_end = serializers.DateTimeField(required=True)
+    subject = serializers.CharField()
+    plan_start = serializers.DateTimeField()
+    plan_end = serializers.DateTimeField()
+    remark = serializers.CharField(allow_null=True)
     note_no = serializers.IntegerField(default=None, allow_null=True)
-    is_rest = serializers.IntegerField(required=True)
+    is_rest = serializers.BooleanField()
 
 
 class CreateStudyPlanSerializer(ModelSerializer):

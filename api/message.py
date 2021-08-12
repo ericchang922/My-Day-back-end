@@ -58,7 +58,7 @@ class Msg:
 
         class Group:
             select = '查詢群組錯誤'
-            time = '開始時間需小於結束時間'
+            time = '時間設定錯誤'
             # group_member
             member_read = '群組資料讀取錯誤'
             friend_only = '僅能邀請好友'
@@ -140,5 +140,5 @@ class Msg:
         schedule_notice = '提醒不存在'
 
         # study_plan
-        study_plan = '學習計畫不存在'
-        plan_content = '學習計畫沒有此內容'
+        study_plan = '讀書計畫不存在'
+        plan_content = '讀書計畫沒有此內容'

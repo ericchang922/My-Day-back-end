@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.db.models import Max, Min
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
 
@@ -23,7 +24,7 @@ class TemporaryGroupViewSet(ModelViewSet):
 
         schedule_start_time = serializer.validated_data.pop('schedule_start')
         schedule_end_time = serializer.validated_data.pop('schedule_end')
-        if schedule_start_time > schedule_end_time:
+        if schedule_start_time > schedule_end_time or datetime.now() > schedule_start_time:
             return err(Msg.Err.Group.time, 'TMP-A-001', request)
 
         place = serializer.validated_data.pop('place')
@@ -99,13 +100,14 @@ class TemporaryGroupViewSet(ModelViewSet):
         user_is_invited = GroupMember.objects.filter(group_no=group_num, user_id=uid, status_id=2)
 
         if tmp_group.exists() and user_is_invited.exists():
-            schedule = Schedule.objects.filter(connect_group_no=group_num)
+            schedule_time = Schedule.objects.filter(connect_group_no=group_num).\
+                aggregate(start=Min('schedule_start'), end=Max('schedule_end'))
             group = Group.objects.get(serial_no=group_num)
             group_member = GroupMember.objects.filter(group_no=group_num)
             return success({
                 'title': group.group_name,
-                'startTime': schedule.order_by('schedule_start').first().schedule_start,
-                'endTime': schedule.order_by('-schedule_end').first().schedule_end,
+                'startTime': schedule_time['start'],
+                'endTime': schedule_time['end'],
                 'founderPhoto': group.founder.photo,
                 'founderName': group.founder.name,
                 'member': [
