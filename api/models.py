@@ -267,8 +267,11 @@ class GroupStudyplanList(models.Model):
     user_id = models.CharField(max_length=255,primary_key=True)
     status_id = models.IntegerField()
     group_no = models.IntegerField(blank=True, null=True)
+    group_name = models.CharField(max_length=255, db_collation='utf8_general_ci')
     schedule_name = models.CharField(max_length=255)
     studyplan_num = models.IntegerField()
+    create_id = models.CharField(max_length=255, db_collation='utf8_general_ci', blank=True, null=True)
+    creator = models.CharField(max_length=255, db_collation='utf8_general_ci', blank=True, null=True)
     field_date = models.DateField(db_column='_date', blank=True, null=True)  # Field renamed because it started with '_'.
     schedule_start = models.DateTimeField()
     schedule_end = models.DateTimeField()
