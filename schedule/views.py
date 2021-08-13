@@ -104,7 +104,7 @@ class ScheduleViewSet(ModelViewSet):
             schedule_notice = ScheduleNotice.objects.filter(personal_schedule_no=personal_schedule)
             schedule_notice_list = []
             for i in schedule_notice:
-                schedule_notice_list.append(str(i.notice_time))
+                schedule_notice_list.append(i.notice_time)
         except Exception as e:
             print(e)
             schedule_notice_list = []
@@ -114,7 +114,10 @@ class ScheduleViewSet(ModelViewSet):
         end_time = data['endTime'] if data['endTime'] != schedule.schedule_end else None
         remind = data['remind']
         is_remind = remind['isRemind'] if remind is not None else None
-        remind_time = remind['remindTime'] if remind is not None else None
+        if remind is not None:
+            remind_time = []
+            for i in remind['remindTime']:
+                remind_time.append(datetime.strptime(i, '%Y-%m-%d %H:%M:%S.%f'))
         type_id = data['typeId'] if data['typeId'] != schedule.type else None
         is_countdown = data['isCountdown'] if data['isCountdown'] != personal_schedule.is_countdown else None
         place = data['place'] if data['place'] != schedule.place else None
@@ -130,7 +133,8 @@ class ScheduleViewSet(ModelViewSet):
             for s in schedule_notice_list:
                 if s not in remind_time:
                     try:
-                        del_notice = ScheduleNotice.objects.get(personal_schedule_no=personal_schedule, notice_time=s)
+                        del_notice = ScheduleNotice.objects.filter(personal_schedule_no=personal_schedule,
+                                                                   notice_time=s)
                         del_notice.delete()
                     except ObjectDoesNotExist:
                         return not_found(Msg.NotFound.schedule_notice, request)
@@ -153,7 +157,7 @@ class ScheduleViewSet(ModelViewSet):
         if remind is not None:
             if is_remind is not None:
                 personal_schedule.is_notice = is_remind
-            if len(remind_time) > 0:
+            if len(remind_time) >= 0:
                 update_remind()
         else:
             personal_schedule.is_notice = False
