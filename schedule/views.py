@@ -184,6 +184,8 @@ class ScheduleViewSet(ModelViewSet):
             if is_edit_title:
                 group_log.old = old
                 group_log.new = str(schedule.schedule_name)
+            else:
+                group_log.new = str(schedule.schedule_name)
 
             group_log.save()
 
