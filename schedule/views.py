@@ -413,7 +413,7 @@ class ScheduleViewSet(ModelViewSet):
         try:
             PersonalSchedule.objects.get(schedule_no=schedule, user_id=uid)
         except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.personal_schedule, request)
+            pass
         except Exception as e:
             print(e)
             return err(Msg.Err.Schedule.personal_select, 'SC-G-002', request)  # ----------------------------------002
