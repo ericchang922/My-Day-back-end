@@ -12,12 +12,12 @@ class TemporaryGroupSerializer(ModelSerializer):
 
 
 class CreateTmpGroupRequestSerializer(serializers.Serializer):
-    founder = serializers.CharField(required=True)
-    group_name = serializers.CharField(required=True)
-    schedule_start = serializers.DateTimeField(required=True)
-    schedule_end = serializers.DateTimeField(required=True)
-    type = serializers.IntegerField(required=True, min_value=1, max_value=8)
-    place = serializers.CharField(required=True)
+    founder = serializers.CharField()
+    group_name = serializers.CharField()
+    schedule_start = serializers.DateTimeField()
+    schedule_end = serializers.DateTimeField()
+    type = serializers.IntegerField(min_value=1, max_value=8)
+    place = serializers.CharField(allow_null=True)
     friend = GroupMemberForCreateGroupSerializer(many=True)
 
 
