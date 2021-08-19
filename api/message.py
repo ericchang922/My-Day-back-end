@@ -60,6 +60,7 @@ class Msg:
             select = '查詢群組錯誤'
             time = '時間設定錯誤'
             # group_member
+            at_least_one_friend = '至少一位好友'
             member_read = '群組資料讀取錯誤'
             friend_only = '僅能邀請好友'
             already_invited = '已邀請'
