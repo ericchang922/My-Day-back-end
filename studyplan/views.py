@@ -1,8 +1,7 @@
 from datetime import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
-from rest_framework.decorators import action, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
 
 from api.response import *
@@ -80,7 +79,7 @@ class StudyPlanViewSet(ModelViewSet):
             return not_found(Msg.NotFound.study_plan, request)
 
         creator = study_plan.create_id
-        connect_no = Schedule.objects.get(pk=study_plan.schedule_no.pk).connect_group_no
+        connect_no = study_plan.schedule_no.connect_group_no
         user_in_group = GroupMember.objects.filter(group_no=connect_no, user_id=uid, status_id__in=[1, 4])
 
         if uid != creator and \
@@ -118,7 +117,7 @@ class StudyPlanViewSet(ModelViewSet):
             study_plan.is_authority = data['is_authority']
             study_plan.save()
 
-        schedule = Schedule.objects.get(pk=study_plan.schedule_no.pk)
+        schedule = study_plan.schedule_no
         old_schedule_name = schedule.schedule_name
         schedule.schedule_name = serializer.validated_data['schedule_name']
         schedule.schedule_start = serializer.validated_data['schedule_start']

@@ -1,12 +1,13 @@
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import IntegrityError
 from datetime import datetime
-from rest_framework.decorators import action, permission_classes
-from rest_framework.permissions import IsAuthenticated
+
+from django.db import IntegrityError
+from django.db.models import Q
+from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
 
 from api.response import *
-from api.models import Account, Group, GroupMember, GroupList, GroupLog, GroupScheduleTime, Friend, Vote
+from api.models import Account, Group, GroupMember, GroupLog, GroupScheduleTime, Friend, Vote, VoteRecord
 from group.functions import new_group_request
 from group.serializers import GroupSerializer
 
@@ -93,21 +94,20 @@ class GroupViewSet(ModelViewSet):
 
         group = GroupScheduleTime.objects.filter(serial_no=group_num, end_time__gt=datetime.now())
         group_member = GroupMember.objects.filter(group_no=group_num)
-        user_in_group = group_member.filter(user_id=uid)
 
-        if user_in_group.filter(status_id__in=[1, 4]).exists():
-            return err(Msg.Err.Group.already_joined, 'GR-D-001', request)
         if (not group.exists() or not group_member.exists()) and status_id == 1:
             return not_found(Msg.NotFound.group, request)
 
-        if user_in_group.filter(status_id=2).exists():
+        user_is_invited = group_member.filter(user_id=uid, status_id=2)
+        if user_is_invited.exists():
             if status_id == 1:
-                user_in_group.update(status_id=1, join_time=datetime.now())
+                user_is_invited.update(status_id=1, join_time=datetime.now())
                 return success(request=request)
             elif status_id == 3:
-                user_in_group.delete()
+                user_is_invited.delete()
                 return success(request=request)
-        elif status_id != 1:
+
+        if status_id != 1:
             return not_found(Msg.NotFound.member_status, request)
 
         try:
@@ -116,6 +116,8 @@ class GroupViewSet(ModelViewSet):
             GroupMember.objects.create(group_no=group, user_id=user.pk,
                                        status_id=1, join_time=datetime.now(), inviter_id=user.pk)
             return success(request=request)
+        except IntegrityError:
+            return err(Msg.Err.Group.already_joined, 'GR-D-001', request)
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.group, request)
 
@@ -174,17 +176,17 @@ class GroupViewSet(ModelViewSet):
         user_in_group = GroupMember.objects.filter(user_id=uid, group_no=group_num, status_id__in=[1, 4])
 
         if group.exists() and user_in_group.exists():
-            group_vote = Vote.objects.filter(group_no=group_num)
+            group_vote = Vote.objects.filter(Q(end_time__isnull=True) | Q(end_time__gt=datetime.now()), group_no=group_num)
             return success({
                 'title': group.first().group_name,
                 'typeId': group.first().type_id,
                 'vote': [
                     {
-                        'title': g.title,
-                        'voteNum': g.serial_no,
-                        'isVoteType': True if not g.end_time or datetime.now() < g.end_time else False,
+                        'title': v.title,
+                        'voteNum': v.serial_no,
+                        'isVoteType': VoteRecord.objects.filter(vote_no=v.serial_no, user_id=uid).exists()
                     }
-                    for g in group_vote
+                    for v in group_vote
                 ]
             }, request)
         elif not group.exists():
@@ -257,7 +259,7 @@ class GroupViewSet(ModelViewSet):
 
         groups = Group.objects.filter(is_temporary_group=0)
         group_list = GroupMember.objects.filter(user_id=uid, status_id__in=[1, 4],
-                                                group_no__in=groups.values('serial_no')).order_by('-join_time')
+                                                group_no__in=groups.values_list('serial_no')).order_by('-join_time')
         return success({
             'groupContent': [
                 {
@@ -278,7 +280,7 @@ class GroupViewSet(ModelViewSet):
 
         groups = Group.objects.filter(is_temporary_group=0)
         group_list = GroupMember.objects.filter(user_id=uid, status_id=2,
-                                                group_no__in=groups.values('serial_no')).order_by('-join_time')
+                                                group_no__in=groups.values_list('serial_no')).order_by('-join_time')
         return success({
             'groupContent': [
                 {
