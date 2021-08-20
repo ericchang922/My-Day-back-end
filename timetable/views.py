@@ -238,7 +238,7 @@ class TimetableViewSet(ModelViewSet):
                     {
                         'schoolYear': i.semester[:3],
                         'semester': i.semester[4:],
-                        'timetableNo': i.timetable_no
+                        'timetableNo': i.timetable_no.serial_no
                     }
                 )
         except ObjectDoesNotExist:
