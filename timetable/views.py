@@ -583,3 +583,38 @@ class TimetableViewSet(ModelViewSet):
                 return err(Msg.Err.Timetable.create, 'TI-L-005', request)
 
         return success(request=request)
+
+    @action(detail=False)
+    def get_section_time(self, request):
+        data = request.query_params
+
+        uid = data['uid']
+        p_timetable_list = []
+        try:
+            p_timetable = PersonalTimetable.objects.filter(user_id=uid)
+        except:
+            return err(Msg.Err.Timetable.get_timetable, 'TI-F-001', request)
+
+        for i in p_timetable:
+            one_classtime = ClassTime.objects.filter(school_no=i.school_no.serial_no)
+            subject = []
+            for t in one_classtime:
+                timetable = Timetable.objects.get(timetable_no=i.timetable_no, section_no=t.section_no.section_no)
+                subject.append(
+                    {
+                        'startTime': t.start,
+                        'endTime': t.end,
+                    }
+
+                )
+            p_timetable_list.append(
+                {
+                    'semester': i.semester,
+                    'startDate': i.semester_start,
+                    'endDate': i.semester_end,
+                    'subject': subject
+                }
+            )
+        response = {'timetable': p_timetable_list}
+        return success(response, request)
+
