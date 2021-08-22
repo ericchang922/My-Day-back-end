@@ -327,7 +327,7 @@ class VoteViewSet(ModelViewSet):
         now = datetime.now()
         for i in vote:
             end_time = i.end_time if i.end_time is not None else now
-            if end_time >= now and i.end_time is None:
+            if end_time >= now or i.end_time is None:
                 try:
                     vote_record = VoteRecord.objects.filter(vote_no=i.serial_no)
                 except:
