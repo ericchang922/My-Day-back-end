@@ -99,9 +99,9 @@ class VoteViewSet(ModelViewSet):
         except Exception as e:
             print(e)
             return err(Msg.Err.Vote.select, 'VO-B-001', request)  # -----------------------------------------------001
-
-        if vote.end_time < datetime.now():
-            return vote_expired(request)
+        if vote.end_time is not None:
+            if vote.end_time < datetime.now():
+                return vote_expired(request)
 
         try:
             vote_record = VoteRecord.objects.filter(vote_no=vote)
@@ -481,7 +481,7 @@ class VoteViewSet(ModelViewSet):
         now = datetime.now()
         for i in vote:
             end_time = i.end_time if i.end_time is not None else now
-            if end_time < datetime.now():
+            if end_time < now:
                 vote_no = i.serial_no
                 vote_option = VoteDateOption if i.option_type_id == 2 else VoteOption
 
