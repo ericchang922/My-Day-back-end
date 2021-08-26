@@ -64,25 +64,26 @@ class GroupViewSet(ModelViewSet):
         data = request.data
 
         uid = data.get('uid')
-        friend_id = data.get('friendId')
         group_num = data.get('groupNum')
+        friends = data.get('friend', [])
 
-        try:
+        if len(friends) == 0:
+            return err(Msg.Err.Group.at_least_one_friend, 'GR-C-001', request)
+
+        user_is_manager = GroupMember.objects.filter(group_no=group_num, user_id=uid, status_id=4)
+        if user_is_manager.exists():
             group_num = Group.objects.get(pk=group_num)
-            user_is_manager = GroupMember.objects.filter(group_no=group_num, user_id=uid, status_id=4)
-            friendship = Friend.objects.filter(user_id=uid, related_person=friend_id, relation_id__in=[1, 2])
-
-            if user_is_manager.exists() and friendship.exists():
-                GroupMember.objects.create(group_no=group_num, user_id=friend_id, status_id=2, inviter_id=uid)
-                return success(request=request)
-            elif not friendship.exists():
-                return err(Msg.Err.Group.friend_only, 'GR-C-001', request)
-            else:
-                return no_authority('群組管理者', request)
-        except IntegrityError:
-            return err(Msg.Err.Group.already_invited, 'GR-C-002', request)
-        except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.group, request)
+            invited_friends = []
+            for friend in friends:
+                friend_id = friend['friendId']
+                if not Friend.objects.filter(user_id=uid, related_person=friend_id, relation_id__in=[1, 2]).exists():
+                    return err(Msg.Err.Group.friend_only, 'GR-C-002', request)
+                if not GroupMember.objects.filter(group_no=group_num, user_id=friend_id).exists():
+                    invited_friends.append(GroupMember(group_no=group_num, user_id=friend_id, status_id=2, inviter_id=uid))
+            GroupMember.objects.bulk_create(invited_friends)
+            return success(request=request)
+        else:
+            return no_authority('群組管理者', request)
 
     @action(detail=False, methods=['PATCH'])
     def member_status(self, request):
