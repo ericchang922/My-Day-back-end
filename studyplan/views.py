@@ -147,9 +147,8 @@ class StudyPlanViewSet(ModelViewSet):
 
         if user_study_plan.exists() and user_in_group.exists():
             group_num = Group.objects.get(pk=group_num)
-            study_plan = StudyPlan.objects.get(pk=study_plan_num)
+            schedule = StudyPlan.objects.get(pk=study_plan_num).schedule_no
 
-            schedule = Schedule.objects.get(pk=study_plan.schedule_no.pk)
             if datetime.now() > schedule.schedule_start:
                 return err(Msg.Err.StudyPlan.select_old, 'ST-C-001', request)
 
@@ -177,8 +176,7 @@ class StudyPlanViewSet(ModelViewSet):
 
         user_study_plan = StudyPlan.objects.filter(create_id=uid, serial_no=study_plan_num)
         if user_study_plan.exists():
-            study_plan = StudyPlan.objects.get(pk=study_plan_num)
-            schedule = Schedule.objects.get(pk=study_plan.schedule_no.pk)
+            schedule = StudyPlan.objects.get(pk=study_plan_num).schedule_no
 
             if schedule.connect_group_no:
                 plan_content = PlanContent.objects.filter(plan_no=study_plan_num, note_no__isnull=False)
@@ -211,18 +209,16 @@ class StudyPlanViewSet(ModelViewSet):
 
         user_study_plan = StudyPlan.objects.filter(create_id=uid, serial_no=study_plan_num)
         if user_study_plan.exists():
-            schedule = Schedule.objects.get(pk=study_plan.schedule_no.pk)
+            schedule = study_plan.schedule_no
 
             if schedule.connect_group_no:
                 return err(Msg.Err.StudyPlan.disconnect_group_first, 'ST-E-001', request)
 
-            plan_content = PlanContent.objects.filter(pk=study_plan_num)
+            plan_content = PlanContent.objects.filter(plan_no=study_plan_num)
             plan_content.delete()
-
-            schedule_no = study_plan.schedule_no.pk
             study_plan.delete()
 
-            personal_schedule = PersonalSchedule.objects.filter(schedule_no=schedule_no)
+            personal_schedule = PersonalSchedule.objects.filter(schedule_no=schedule)
             if not personal_schedule.exists():
                 schedule.delete()
             return success(request=request)
@@ -240,15 +236,14 @@ class StudyPlanViewSet(ModelViewSet):
             study_plan = StudyPlan.objects.get(pk=study_plan_num)
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.study_plan, request)
+        schedule = study_plan.schedule_no
 
-        creator = study_plan.create_id
-        schedule = Schedule.objects.get(pk=study_plan.schedule_no.pk)
         user_is_member = GroupMember.objects.filter(user_id=uid, group_no=schedule.connect_group_no,
                                                     status_id__in=[1, 4])
-        if uid == creator or user_is_member.exists():
+        if uid == study_plan.create_id or user_is_member.exists():
             plan_content = PlanContent.objects.filter(plan_no=study_plan_num)
             return success({
-                'creatorId': study_plan.create.pk,
+                'creatorId': study_plan.create_id,
                 'creator': study_plan.create.name,
                 'isAuthority': bool(study_plan.is_authority),
                 'title': schedule.schedule_name,
