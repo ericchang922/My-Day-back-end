@@ -154,14 +154,20 @@ class GroupViewSet(ModelViewSet):
         uid = data.get('uid')
         group_num = data.get('groupNum')
 
-        user_in_group = GroupMember.objects.filter(user_id=uid, group_no=group_num, status_id__in=[1, 4])
-        group_manager = GroupMember.objects.filter(group_no=group_num, status_id=4)
-        group_member = GroupMember.objects.filter(group_no=group_num, status_id__in=[1, 2])
+        group_member = GroupMember.objects.filter(group_no=group_num)
+
+        user_in_group = group_member.filter(user_id=uid, status_id__in=[1, 4])
+        manager = group_member.filter(status_id=4)
+        member = group_member.filter(status_id=1)
 
         if not user_in_group.exists():
             return not_found(Msg.NotFound.user_has_left, request)
-        elif user_in_group.first().status_id == 4 and group_manager.count() == 1 and group_member.count() > 0:
-            return err(Msg.Err.Group.only_one_manager, 'GR-F-001', request)
+
+        if user_in_group.first().status_id == 4 and manager.count() == 1:
+            if member.count() > 0:
+                return err(Msg.Err.Group.only_one_manager, 'GR-F-001', request)
+            group_member.delete()
+            return success(request=request)
 
         user_in_group.delete()
         return success(request=request)
