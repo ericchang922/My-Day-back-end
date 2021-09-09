@@ -95,13 +95,14 @@ class StudyPlanViewSet(ModelViewSet):
 
         all_subjects = []
         num = 0
+        creator_note = Note.objects.filter(create_id=creator).values_list('serial_no', flat=True)
+
         for subject in subjects:
             num += 1
             note_no = subject['note_no']
             if note_no:
-                user_note = Note.objects.filter(serial_no=note_no, create_id=uid).exists()
                 group_note = Note.objects.filter(serial_no=note_no, group_no=connect_no).exists()
-                if not user_note and not group_note:
+                if not group_note and note_no not in creator_note:
                     return not_found(Msg.NotFound.note, request)
                 note_no = Note.objects.get(pk=note_no)
             subject_item = PlanContent(plan_no=study_plan, plan_num=num, subject=subject['subject'],
@@ -149,9 +150,6 @@ class StudyPlanViewSet(ModelViewSet):
             group_num = Group.objects.get(pk=group_num)
             schedule = StudyPlan.objects.get(pk=study_plan_num).schedule_no
 
-            if datetime.now() > schedule.schedule_start:
-                return err(Msg.Err.StudyPlan.select_old, 'ST-C-001', request)
-
             if not schedule.connect_group_no:
                 schedule.connect_group_no = group_num
                 schedule.save()
@@ -159,9 +157,9 @@ class StudyPlanViewSet(ModelViewSet):
                                         trigger_type='I', do_type_id=4, new=schedule.schedule_name)
                 return success(request=request)
             elif schedule.connect_group_no != group_num:
-                return err(Msg.Err.StudyPlan.only_share_with_one_group, 'ST-C-002', request)
+                return err(Msg.Err.StudyPlan.only_share_with_one_group, 'ST-C-001', request)
             else:
-                return err(Msg.Err.StudyPlan.has_been_shared, 'ST-C-003', request)
+                return err(Msg.Err.StudyPlan.has_been_shared, 'ST-C-002', request)
         elif not user_in_group.exists():
             return not_found(Msg.NotFound.not_in_group, request)
         else:
@@ -342,18 +340,21 @@ class StudyPlanViewSet(ModelViewSet):
         group_num = data.get('groupNum')
         study_plan = GroupStudyplanList.objects.filter(user_id=uid, group_no=group_num, status_id__in=[1, 4])
 
+        plan = [
+            {
+                'studyplanNum': s.studyplan_num,
+                'creatorId': s.create_id,
+                'creator': s.creator,
+                'title': s.schedule_name,
+                'date': s.schedule_start.date(),
+                'startTime': s.schedule_start,
+                'endTime': s.schedule_end
+            }
+            for s in study_plan
+        ]
+
         return success({
-            'studyplan': [
-                {
-                    'studyplanNum': s.studyplan_num,
-                    'creatorId': s.create_id,
-                    'creator': s.creator,
-                    'title': s.schedule_name,
-                    'date': s.schedule_start.date(),
-                    'startTime': s.schedule_start,
-                    'endTime': s.schedule_end,
-                }
-                for s in study_plan
-            ]
+            'pastStudyplan': [p for p in plan if p['endTime'] < datetime.now()],
+            'futureStudyplan': [p for p in plan if p['endTime'] > datetime.now()]
         }, request)
 
