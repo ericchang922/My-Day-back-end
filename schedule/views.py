@@ -66,6 +66,7 @@ class ScheduleViewSet(ModelViewSet):
         is_edit_schedule = False
         is_edit_title = False
         old = None
+
         try:
             schedule = Schedule.objects.get(serial_no=schedule_no)
         except ObjectDoesNotExist:
@@ -117,11 +118,24 @@ class ScheduleViewSet(ModelViewSet):
         if remind is not None:
             remind_time = []
             for i in remind['remindTime']:
+                if 'z' in i:
+                    i = i.replace('z', '')
+                elif 'Z' in i:
+                    i = i.replace('Z', '')
                 remind_time.append(datetime.strptime(i, '%Y-%m-%d %H:%M:%S.%f'))
         type_id = data['typeId'] if data['typeId'] != schedule.type else None
         is_countdown = data['isCountdown'] if data['isCountdown'] != personal_schedule.is_countdown else None
         place = data['place'] if data['place'] != schedule.place else None
         remark = data['remark'] if data['remark'] != personal_schedule.remark else None
+
+        for z in ['z','Z']:
+            if z in start_time:
+                start_time = start_time.replace(z, '')
+                start_time = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S.%f')
+            if z in end_time:
+                end_time = end_time.replace(z, '')
+                end_time = datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S.%f')
+
 
         def update_remind():
             for r in remind_time:
