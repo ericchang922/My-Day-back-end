@@ -24,6 +24,7 @@ class Msg:
             registered = '此email已被使用'
             account_create = '建立帳號錯誤'
             login = '登入失敗'
+            verification_code = '驗證碼錯誤'
 
         class Schedule:
             create = '建立行程錯誤'
@@ -89,7 +90,7 @@ class Msg:
         type = ''
         # account
         account = '查無使用者'
-        verification_code = '驗證碼不正確'
+        verification_code = '查無驗證碼'
 
         # timetable
         timetable = '課表不存在'
