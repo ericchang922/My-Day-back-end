@@ -1,8 +1,12 @@
+import string
+import random
+
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
 from django.db.models import ObjectDoesNotExist
+from datetime import datetime
 
-from api.models import Account
+from api.models import Account, VerificationCode
 from api.response import *
 from account.serializers import AccountSerializer
 
@@ -70,3 +74,48 @@ class AccountViewSet(ModelViewSet):
         }
 
         return success(response)
+
+    @action(detail=False, methods=['POST'])
+    def send_code(self, request):
+        data = request.data
+
+        uid = data.get('uid')
+
+        try:
+            Account.objects.get(user_id=uid)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.account)
+        except:
+            return err(Msg.Err.Account.get, 'AC-D-001')
+
+        code = ''
+        for i in range(6):
+            code += str(random.choice(string.ascii_letters + string.digits))
+
+        try:
+            get_code = VerificationCode.objects.get(user_id=uid)
+            get_code.delete()
+            VerificationCode.objects.create(user_id=uid, ver_code=code, create_time=datetime.now())
+        except:
+            VerificationCode.objects.create(user_id=uid, ver_code=code, create_time=datetime.now())
+
+        return success()
+
+    @action(detail=False, methods=['POST'])
+    def forget_pw(self, request):
+        data = request.data
+
+        uid = data.get('uid')
+        verification_Code = data.get('verificationCode')
+
+        try:
+            VerificationCode.objects.get(user_id=uid)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.verification_code)
+
+        try:
+            VerificationCode.objects.get(user_id=uid, ver_code=verification_Code)
+        except:
+            return err(Msg.Err.Account.verification_code, 'AC-E-001')
+
+        return success()
