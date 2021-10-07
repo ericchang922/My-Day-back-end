@@ -5,6 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
 from django.db.models import ObjectDoesNotExist
 from datetime import datetime
+from django.core.mail import send_mail
 
 from api.models import Account, VerificationCode
 from api.response import *
@@ -98,6 +99,12 @@ class AccountViewSet(ModelViewSet):
             VerificationCode.objects.create(user_id=uid, ver_code=code, create_time=datetime.now())
         except:
             VerificationCode.objects.create(user_id=uid, ver_code=code, create_time=datetime.now())
+
+        send_mail('您的learnAt驗證碼',
+                  '驗證碼：'+code,
+                  'learnat.ntub@gmail.com',
+                  ['thomas355213@gmail.com'],
+                  fail_silently=False)
 
         return success()
 
