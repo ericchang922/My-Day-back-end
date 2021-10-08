@@ -28,9 +28,13 @@ from api import views as api_views
 from timetable import views as timetable_views
 
 router = DefaultRouter()
+# friend
 router.register('friend', friend_views.FriendViewSet)
+# group
 router.register('group', group_views.GroupViewSet)
+# studyplan
 router.register('studyplan', studyplan_views.StudyPlanViewSet)
+# temporary_group
 router.register('temporary_group', temporary_group_views.TemporaryGroupViewSet)
 
 # account
