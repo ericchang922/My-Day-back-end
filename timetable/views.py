@@ -83,6 +83,25 @@ class TimetableViewSet(ModelViewSet):
             except:
                 return err(Msg.Err.Timetable.create, 'TI-A-007', request)
 
+            try:
+                sharecode = Sharecode.objects.get(user_id=uid, timetable_no=timetable)
+                code = sharecode.code
+            except ObjectDoesNotExist:
+                def create_random():
+                    rand = ''
+                    for i in range(8):
+                        rand += str(random.choice(string.ascii_letters + string.digits))
+                    return rand
+
+                is_not_created = True
+                while is_not_created:
+                    code = create_random()
+                    try:
+                        Sharecode.objects.get(code=code)
+                    except ObjectDoesNotExist:
+                        Sharecode.objects.create(code=code, user_id=uid, timetable_no=timetable)
+                        is_not_created = False
+
         return success(request=request)
 
     @action(detail=False, methods=['POST'])
@@ -477,39 +496,19 @@ class TimetableViewSet(ModelViewSet):
         ShareLog.objects.get(share_to=uid, timetable_no=timetable_no).delete()
         return success(request=request)
 
-    @action(detail=False, methods=['POST'])
+    @action(detail=False)
     def get_sharecode(self, request):
-        data = request.data
+        data = request.query_params
 
         uid = data['uid']
-        school_year = data['schoolYear']
-        semester = data['semester']
-        f_semester = f'{school_year}-{semester}'
+        timetable_no = data['timetableNo']
 
         try:
-            p_timetable = PersonalTimetable.objects.get(user_id=uid, semester=f_semester)
+            code = Sharecode.objects.get(user_id=uid, timetable_no=timetable_no)
         except:
-            return err(Msg.Err.Timetable.get_timetable, 'TI-K-001', request)
-        try:
-            sharecode = Sharecode.objects.get(user_id=uid, timetable_no=p_timetable.timetable_no)
-            code = sharecode.code
-        except ObjectDoesNotExist:
-            def create_random():
-                rand = ''
-                for i in range(8):
-                    rand += str(random.choice(string.ascii_letters + string.digits))
-                return rand
+            return err(Msg.Err.Timetable.get_sharecode, 'TI-K-001', request)
 
-            is_not_created = True
-            while is_not_created:
-                code = create_random()
-                try:
-                    Sharecode.objects.get(code=code)
-                except ObjectDoesNotExist:
-                    Sharecode.objects.create(code=code, user_id=uid, timetable_no=p_timetable.timetable_no)
-                    is_not_created = False
-
-        response = {'sharecode': code}
+        response = {'sharecode': code.code}
         return success(response, request)
 
     @action(detail=False, methods=['POST'])
