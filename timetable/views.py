@@ -410,25 +410,6 @@ class TimetableViewSet(ModelViewSet):
         return success()
 
     @action(detail=False, methods=['POST'])
-    def accept_timetable_list(self, request):
-        data = request.data
-
-        uid = data['uid']
-        school_year = data['schoolYear']
-        semester = data['semester']
-        f_semester = f'{school_year}-{semester}'
-
-        share = ShareLog.objects.get(share_to=uid, semester=f_semester)
-
-        response = {
-            'friendName': share.user.name,
-            'timetableNo': share.timetable_no.serial_no,
-            'photo': share.user.photo
-        }
-        response = {'accept_timetable_list': response}
-        return success(response, request)
-
-    @action(detail=False, methods=['POST'])
     def accept_timetable(self, request):
         data = request.data
 
@@ -592,7 +573,7 @@ class TimetableViewSet(ModelViewSet):
         try:
             p_timetable = PersonalTimetable.objects.filter(user_id=uid)
         except:
-            return err(Msg.Err.Timetable.get_timetable, 'TI-F-001', request)
+            return err(Msg.Err.Timetable.get_timetable, 'TI-M-001', request)
 
         for i in p_timetable:
             one_classtime = ClassTime.objects.filter(school_no=i.school_no.serial_no)
@@ -617,3 +598,52 @@ class TimetableViewSet(ModelViewSet):
         response = {'timetable': p_timetable_list}
         return success(response, request)
 
+    @action(detail=False)
+    def get_accept_timetable_list(self, request):
+        data = request.data
+
+        uid = data['uid']
+        school_year = data['schoolYear']
+        semester = data['semester']
+        f_semester = f'{school_year}-{semester}'
+
+        try:
+            share = ShareLog.objects.filter(share_to=uid, semester=f_semester)
+        except:
+            return err(Msg.Err.Timetable.get_share, 'TI-N-001', request)
+
+        for i in share:
+            subject = []
+            subject.append(
+                {
+                    'friendName': i.user.name,
+                    'timetableNo': i.timetable_no.serial_no,
+                    'photo': i.user.photo
+                }
+            )
+
+        response = {'accept_timetable_list': subject}
+        return success(response, request)
+
+    @action(detail=False)
+    def get_accept_list(self, request):
+        data = request.query_params
+
+        uid = data['uid']
+
+        try:
+            share = ShareLog.objects.filter(share_to=uid)
+        except:
+            return err(Msg.Err.Timetable.get_share, 'TI-O-001', request)
+
+        for i in share:
+            subject = []
+            subject.append(
+                {
+                    'timetableNo': i.timetable_no.serial_no,
+                    'semester': i.semester
+                }
+            )
+
+        response = {'accept_list': subject}
+        return success(response, request)
