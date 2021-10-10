@@ -103,7 +103,7 @@ class AccountViewSet(ModelViewSet):
         send_mail('您的learnAt驗證碼',
                   '驗證碼：'+code,
                   'learnat.ntub@gmail.com',
-                  ['thomas355213@gmail.com'],
+                  [uid],
                   fail_silently=False)
 
         return success()
