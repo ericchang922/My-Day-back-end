@@ -17,6 +17,7 @@ class Msg:
             get_timetable = '取得課表錯誤'
             get_timetable_list = '取得課表列表錯誤'
             get_sharecode = '分享碼錯誤'
+            get_share = '取得分享錯誤'
 
 
         class Account:
