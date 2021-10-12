@@ -378,22 +378,26 @@ class TimetableViewSet(ModelViewSet):
 
     @action(detail=False, methods=['POST'])
     def share_timetable(self, request):
-        data = request.data
+        share = request.data['share']
 
-        uid = data['uid']
-        timetable_no = data['timetableNo']
-        share_type_id = data['shareTypeId']
-        to_id = data['toId']
-        school_year = data['schoolYear']
-        semester = data['semester']
-        f_semester = f'{school_year}-{semester}'
+        try:
+            for i in share:
+                uid = i.get('uid')
+                timetable_no = i.get('timetableNo')
+                share_type_id = i.get('shareTypeId')
+                to_id = i.get('toId')
+                school_year = i.get('schoolYear')
+                semester = i.get('semester')
+                f_semester = f'{school_year}-{semester}'
 
-        account = Account.objects.get(user_id=to_id)
-        timetable_serial = TimetableCreate.objects.get(serial_no=timetable_no)
-        share_type = ShareType.objects.get(share_type_id=share_type_id)
+                share_to = Account.objects.get(user_id=to_id)
+                timetable_serial = TimetableCreate.objects.get(serial_no=timetable_no)
+                share_type = ShareType.objects.get(share_type_id=share_type_id)
 
-        ShareLog.objects.create(do_time=datetime.now(), user_id=uid, share_to=account, timetable_no=timetable_serial,
-                                semester=f_semester, share_type_id=share_type)
+                ShareLog.objects.create(do_time=datetime.now(), user_id=uid, share_to=share_to,
+                                        timetable_no=timetable_serial, semester=f_semester, share_type_id=share_type)
+        except:
+            return err(Msg.Err.Timetable.share, 'TI-H-001', request)
 
         return success()
 
@@ -404,7 +408,11 @@ class TimetableViewSet(ModelViewSet):
         uid = data['uid']
         timetable_no = data['timetableNo']
 
-        get_share = ShareLog.objects.get(user_id=uid, timetable_no=timetable_no)
+        try:
+            get_share = ShareLog.objects.get(user_id=uid, timetable_no=timetable_no)
+        except:
+            return err(Msg.Err.Timetable.delete_share, 'TI-I-001', request)
+
         get_share.delete()
 
         return success()
