@@ -270,17 +270,20 @@ class StudyPlanViewSet(ModelViewSet):
         uid = data.get('uid')
         study_plan = StudyplanList.objects.filter(create_id=uid)
 
+        plan = [
+            {
+                'studyplanNum': s.studyplan_num,
+                'title': s.schedule_name,
+                'date': s.schedule_start.date(),
+                'startTime': s.schedule_start,
+                'endTime': s.schedule_end,
+            }
+            for s in study_plan
+        ]
+
         return success({
-            'studyplan': [
-                {
-                    'studyplanNum': s.studyplan_num,
-                    'title': s.schedule_name,
-                    'date': s.schedule_start.date(),
-                    'startTime': s.schedule_start,
-                    'endTime': s.schedule_end,
-                }
-                for s in study_plan
-            ]
+            'pastStudyplan': [p for p in plan if p['endTime'] < datetime.now()],
+            'futureStudyplan': [p for p in plan if p['endTime'] >= datetime.now()]
         }, request)
 
     @action(detail=False)
@@ -309,27 +312,38 @@ class StudyPlanViewSet(ModelViewSet):
         data = request.query_params
 
         uid = data.get('uid')
-        study_plan = GroupStudyplanList.objects.filter(user_id=uid, status_id__in=[1, 4])
 
-        return success({
-            'groupStudyplan': [
+        study_plan = GroupStudyplanList.objects.filter(user_id=uid, status_id__in=[1, 4])
+        past_future = [
+            study_plan.filter(schedule_end__lt=datetime.now()),
+            study_plan.filter(schedule_end__gte=datetime.now())
+        ]
+
+        group_plan = [
+            [
                 {
                     'groupNum': group_no,
                     'groupName': Group.objects.get(pk=group_no).group_name,
-                    'studyplanCount': study_plan.filter(group_no=group_no).count(),
+                    'studyplanCount': pf.filter(group_no=group_no).count(),
                     'studyplanContent': [
                         {
-                            'studyplanNum': s.studyplan_num,
-                            'title': s.schedule_name,
-                            'date': s.schedule_start.date(),
-                            'startTime': s.schedule_start,
-                            'endTime': s.schedule_end,
+                            'studyplanNum': p.studyplan_num,
+                            'title': p.schedule_name,
+                            'date': p.schedule_start.date(),
+                            'startTime': p.schedule_start,
+                            'endTime': p.schedule_end,
                         }
-                        for s in study_plan.filter(group_no=group_no)
+                        for p in pf.filter(group_no=group_no)
                     ]
                 }
-                for group_no in study_plan.values_list('group_no', flat=True).distinct()
+                for group_no in pf.values_list('group_no', flat=True).distinct()
             ]
+            for pf in past_future
+        ]
+
+        return success({
+            'pastStudyplan': group_plan[0],
+            'futureStudyplan': group_plan[1]
         }, request)
 
     @action(detail=False)
@@ -355,6 +369,6 @@ class StudyPlanViewSet(ModelViewSet):
 
         return success({
             'pastStudyplan': [p for p in plan if p['endTime'] < datetime.now()],
-            'futureStudyplan': [p for p in plan if p['endTime'] > datetime.now()]
+            'futureStudyplan': [p for p in plan if p['endTime'] >= datetime.now()]
         }, request)
 
