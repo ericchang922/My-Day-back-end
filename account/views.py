@@ -7,6 +7,7 @@ from django.db.models import ObjectDoesNotExist
 from datetime import datetime
 from django.core.mail import send_mail
 
+import core.settings
 from api.models import Account, VerificationCode
 from api.response import *
 from account.serializers import AccountSerializer
@@ -102,7 +103,7 @@ class AccountViewSet(ModelViewSet):
 
         send_mail('您的learnAt驗證碼',
                   '驗證碼：'+code,
-                  'learnat.ntub@gmail.com',
+                  core.settings.EMAIL_HOST_USER,
                   [uid],
                   fail_silently=False)
 
