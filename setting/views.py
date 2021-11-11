@@ -20,7 +20,6 @@ class SettingViewSet(ModelViewSet):
         is_schedule = data.get('isSchedule')
         is_countdown = data.get('isCountdown')
         is_group = data.get('isGroup')
-        is_temporary = data.get('isTemporary')
 
         try:
             account = Account.objects.get(user_id=uid)
@@ -37,6 +36,24 @@ class SettingViewSet(ModelViewSet):
 
         if is_group is not None:
             account.is_group_notice = is_group
+
+        account.save()
+
+        return success(request=request)
+
+    @action(detail=False, methods=['POST'])
+    def notice_temporary(self, request):
+        data = request.data
+
+        uid = data.get('uid')
+        is_temporary = data.get('isTemporary')
+
+        try:
+            account = Account.objects.get(user_id=uid)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.account, request)
+        except:
+            return err(Msg.Err.Account.get, 'SE-A-001', request)
 
         if is_temporary is not None:
             account.is_temporary_group_notice = is_temporary
@@ -66,12 +83,30 @@ class SettingViewSet(ModelViewSet):
 
         return success(request=request)
 
+    @action(detail=False)
+    def get_theme(self, request):
+        data = request.query_params
+
+        uid = data.get('uid')
+
+        try:
+            account = Account.objects.get(user_id=uid)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.account, request)
+        except:
+            return err(Msg.Err.Account.get, 'US-A-001', request)
+
+        response = {
+            'theme': account.theme_id
+        }
+
+        return success(response, request)
+
     @action(detail=False, methods=['POST'])
-    def privacy(self, request):
+    def privacy_location(self, request):
         data = request.data
 
         uid = data.get('uid')
-        is_location = data.get('isLocation')
         is_public = data.get('isPublic')
 
         try:
@@ -81,8 +116,26 @@ class SettingViewSet(ModelViewSet):
         except:
             return err(Msg.Err.Account.get, 'SE-C-001', request)
 
-        if is_location is not None:
-            account.is_location = is_location
+        if is_public is not None:
+            account.is_public = is_public
+
+        account.save()
+
+        return success(request=request)
+
+    @action(detail=False, methods=['POST'])
+    def privacy_timetable(self, request):
+        data = request.data
+
+        uid = data.get('uid')
+        is_public = data.get('isPublic')
+
+        try:
+            account = Account.objects.get(user_id=uid)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.account, request)
+        except:
+            return err(Msg.Err.Account.get, 'SE-C-001', request)
 
         if is_public is not None:
             account.is_public = is_public
