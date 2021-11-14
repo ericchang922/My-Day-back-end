@@ -8,7 +8,7 @@ from datetime import datetime
 from django.core.mail import send_mail
 
 import core.settings
-from api.models import Account, VerificationCode
+from api.models import Account, VerificationCode, Notice
 from api.response import *
 from account.serializers import AccountSerializer
 
@@ -32,8 +32,12 @@ class AccountViewSet(ModelViewSet):
             if registered > 0:
                 return err(Msg.Err.Account.registered, 'AC-A-001')
             else:
-                new_account = Account.objects.create(user_id=uid, name=name, password=password)
+                new_account = Account.objects.create(user_id=uid, name=name, password=password, theme_id='1',
+                                                     is_public='0', is_help='0', is_location='0')
                 new_account.save()
+                Notice.objects.create(user_id=uid, is_group_notice='1', is_countdown_notice='1',
+                                      is_temporary_group_notice='1',
+                                      is_schedule_notice='1')
         except:
             return err(Msg.Err.Account.account_create)
         return success()
