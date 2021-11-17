@@ -94,7 +94,7 @@ class SettingViewSet(ModelViewSet):
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.account, request)
         except:
-            return err(Msg.Err.Account.get, 'US-A-001', request)
+            return err(Msg.Err.Account.get, 'SE-A-001', request)
 
         response = {
             'theme': account.theme_id
@@ -165,3 +165,80 @@ class SettingViewSet(ModelViewSet):
             friend.update(is_public_timetable=is_public)
 
         return success(request=request)
+
+    @action(detail=False)
+    def get_location(self, request):
+        data = request.query_params
+
+        uid = data.get('uid')
+
+        try:
+            account = Account.objects.get(user_id=uid)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.account, request)
+        except:
+            return err(Msg.Err.Account.get, 'SE-A-001', request)
+
+        response = {
+            'location': account.is_location
+        }
+
+        return success(response, request)
+
+    @action(detail=False)
+    def get_timetable(self, request):
+        data = request.query_params
+
+        uid = data.get('uid')
+
+        try:
+            account = Account.objects.get(user_id=uid)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.account, request)
+        except:
+            return err(Msg.Err.Account.get, 'SE-A-001', request)
+
+        response = {
+            'timetable': account.is_public
+        }
+
+        return success(response, request)
+
+
+    @action(detail=False)
+    def get_schedule_notice(self, request):
+        data = request.query_params
+
+        uid = data.get('uid')
+
+        try:
+            account = Account.objects.get(user_id=uid)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.account, request)
+        except:
+            return err(Msg.Err.Account.get, 'SE-A-001', request)
+
+        response = {
+            'schedule_notice': account.notice.is_schedule_notice
+        }
+
+        return success(response, request)
+
+    @action(detail=False)
+    def get_temporary_notice(self, request):
+        data = request.query_params
+
+        uid = data.get('uid')
+
+        try:
+            account = Account.objects.get(user_id=uid)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.account, request)
+        except:
+            return err(Msg.Err.Account.get, 'SE-A-001', request)
+
+        response = {
+            'temporary_notice': account.notice.is_temporary_group_notice
+        }
+
+        return success(response, request)
