@@ -2,10 +2,11 @@ from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
 from django.db.models import ObjectDoesNotExist
 
-from api.models import Notice, Account, Friend
+from api.models import Notice, Account, Friend, PersonalTimetable
 from api.response import *
 from setting.serializers import SettingSerializer
 
+from datetime import datetime
 
 # Create your views here.
 class SettingViewSet(ModelViewSet):
@@ -53,7 +54,7 @@ class SettingViewSet(ModelViewSet):
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.account, request)
         except:
-            return err(Msg.Err.Account.get, 'SE-A-001', request)
+            return err(Msg.Err.Account.get, 'SE-B-001', request)
 
         if is_temporary is not None:
             account.is_temporary_group_notice = is_temporary
@@ -74,7 +75,7 @@ class SettingViewSet(ModelViewSet):
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.account, request)
         except:
-            return err(Msg.Err.Account.get, 'SE-B-001', request)
+            return err(Msg.Err.Account.get, 'SE-C-001', request)
 
         if theme_id is not None:
             account.theme_id = theme_id
@@ -94,7 +95,7 @@ class SettingViewSet(ModelViewSet):
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.account, request)
         except:
-            return err(Msg.Err.Account.get, 'SE-A-001', request)
+            return err(Msg.Err.Account.get, 'SE-D-001', request)
 
         response = {
             'theme': account.theme_id
@@ -114,7 +115,7 @@ class SettingViewSet(ModelViewSet):
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.account, request)
         except:
-            return err(Msg.Err.Account.get, 'SE-C-001', request)
+            return err(Msg.Err.Account.get, 'SE-E-001', request)
 
         if is_public is not None:
             account.is_public = is_public
@@ -135,7 +136,7 @@ class SettingViewSet(ModelViewSet):
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.account, request)
         except:
-            return err(Msg.Err.Account.get, 'SE-C-001', request)
+            return err(Msg.Err.Account.get, 'SE-F-001', request)
 
         if is_public is not None:
             account.is_public = is_public
@@ -156,7 +157,7 @@ class SettingViewSet(ModelViewSet):
         try:
             friend = Friend.objects.filter(user_id=uid, related_person=friend_id)
         except:
-            return err(Msg.NotFound.friend, 'SE-D-001', request)
+            return err(Msg.NotFound.friend, 'SE-G-001', request)
 
         if is_temporary is not None:
             friend.update(is_temporary_group=is_temporary)
@@ -177,7 +178,7 @@ class SettingViewSet(ModelViewSet):
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.account, request)
         except:
-            return err(Msg.Err.Account.get, 'SE-A-001', request)
+            return err(Msg.Err.Account.get, 'SE-H-001', request)
 
         response = {
             'location': account.is_location
@@ -196,7 +197,7 @@ class SettingViewSet(ModelViewSet):
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.account, request)
         except:
-            return err(Msg.Err.Account.get, 'SE-A-001', request)
+            return err(Msg.Err.Account.get, 'SE-I-001', request)
 
         response = {
             'timetable': account.is_public
@@ -216,7 +217,7 @@ class SettingViewSet(ModelViewSet):
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.account, request)
         except:
-            return err(Msg.Err.Account.get, 'SE-A-001', request)
+            return err(Msg.Err.Account.get, 'SE-J-001', request)
 
         response = {
             'schedule_notice': account.notice.is_schedule_notice
@@ -235,10 +236,26 @@ class SettingViewSet(ModelViewSet):
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.account, request)
         except:
-            return err(Msg.Err.Account.get, 'SE-A-001', request)
+            return err(Msg.Err.Account.get, 'SE-K-001', request)
 
         response = {
             'temporary_notice': account.notice.is_temporary_group_notice
         }
 
         return success(response, request)
+
+    @action(detail=False)
+    def get_friend_privacy(self, request):
+        data = request.query_params
+
+        uid = data.get('uid')
+        friend_id = data.get('friendId')
+
+        friend = Friend.objects.filter(user_id=uid, related_person=friend_id, relation_id__in=[1, 2])
+        if friend.exists():
+            return success({
+                'isPublicTimetable': friend.first().is_public_timetable,
+                'isTemporaryGroup': friend.first().is_temporary_group
+            }, request)
+        else:
+            return not_found(Msg.NotFound.friend, request)
