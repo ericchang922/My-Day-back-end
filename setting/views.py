@@ -205,45 +205,6 @@ class SettingViewSet(ModelViewSet):
 
         return success(response, request)
 
-
-    @action(detail=False)
-    def get_schedule_notice(self, request):
-        data = request.query_params
-
-        uid = data.get('uid')
-
-        try:
-            account = Account.objects.get(user_id=uid)
-        except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.account, request)
-        except:
-            return err(Msg.Err.Account.get, 'SE-J-001', request)
-
-        response = {
-            'scheduleNotice': account.notice.is_schedule_notice
-        }
-
-        return success(response, request)
-
-    @action(detail=False)
-    def get_temporary_notice(self, request):
-        data = request.query_params
-
-        uid = data.get('uid')
-
-        try:
-            account = Account.objects.get(user_id=uid)
-        except ObjectDoesNotExist:
-            return not_found(Msg.NotFound.account, request)
-        except:
-            return err(Msg.Err.Account.get, 'SE-K-001', request)
-
-        response = {
-            'temporaryNotice': account.notice.is_temporary_group_notice
-        }
-
-        return success(response, request)
-
     @action(detail=False)
     def get_friend_privacy(self, request):
         data = request.query_params
@@ -259,3 +220,25 @@ class SettingViewSet(ModelViewSet):
             }, request)
         else:
             return not_found(Msg.NotFound.friend, request)
+
+    @action(detail=False)
+    def get_notice(self, request):
+        data = request.query_params
+
+        uid = data.get('uid')
+
+        try:
+            account = Account.objects.get(user_id=uid)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.account, request)
+        except:
+            return err(Msg.Err.Account.get, 'SE-L-001', request)
+
+        response = {
+            'scheduleNotice': account.notice.is_schedule_notice,
+            'temporaryNotice': account.notice.is_temporary_group_notice,
+            'countdownNotice': account.notice.is_countdown_notice,
+            'groupNotice': account.notice.is_group_notice
+        }
+
+        return success(response, request)
