@@ -220,7 +220,7 @@ class SettingViewSet(ModelViewSet):
             return err(Msg.Err.Account.get, 'SE-J-001', request)
 
         response = {
-            'schedule_notice': account.notice.is_schedule_notice
+            'scheduleNotice': account.notice.is_schedule_notice
         }
 
         return success(response, request)
@@ -239,7 +239,7 @@ class SettingViewSet(ModelViewSet):
             return err(Msg.Err.Account.get, 'SE-K-001', request)
 
         response = {
-            'temporary_notice': account.notice.is_temporary_group_notice
+            'temporaryNotice': account.notice.is_temporary_group_notice
         }
 
         return success(response, request)
