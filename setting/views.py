@@ -64,7 +64,7 @@ class SettingViewSet(ModelViewSet):
         return success(request=request)
 
     @action(detail=False, methods=['POST'])
-    def theme(self, request):
+    def themes(self, request):
         data = request.data
 
         uid = data.get('uid')
@@ -85,7 +85,7 @@ class SettingViewSet(ModelViewSet):
         return success(request=request)
 
     @action(detail=False)
-    def get_theme(self, request):
+    def get_themes(self, request):
         data = request.query_params
 
         uid = data.get('uid')
