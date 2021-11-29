@@ -154,6 +154,7 @@ class NoteViewSet(ModelViewSet):
 
         response = {
             'title': note.title,
+            'typeName': note.type_name,
             'content': note.content
         }
         return success(response, request)

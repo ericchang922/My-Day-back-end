@@ -77,6 +77,7 @@ class Msg:
         class Friend:
             already_sent_request = '已送出邀請'
             already_best_friend = '已為摯友'
+            get = '取得好友錯誤'
 
         class StudyPlan:
             at_least_one_subject = '至少要有一個科目'
