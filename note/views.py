@@ -297,7 +297,8 @@ class NoteViewSet(ModelViewSet):
         note.save()
 
         try:
-            GroupLog.objects.create(do_time=datetime.now(), group_no_id=group_no, trigger_type='D', do_type_id=7,
+            GroupLog.objects.create(do_time=datetime.now(), group_no_id=group_no, user_id=uid, trigger_type='D',
+                                    do_type_id=7,
                                     old=str(note.title))
         except Exception as e:
             print(e)
