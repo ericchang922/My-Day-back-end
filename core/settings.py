@@ -24,7 +24,7 @@ SECRET_KEY = '15i6)scshrob#x9*0$l)8l^g9m43_ty9jug!tu)md=j8&v9w!s'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['myday.sytes.net', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['myday.sytes.net', '127.0.0.1', 'localhost', '35.75.104.198:80', '*']
 
 # Application definition
 
