@@ -50,16 +50,14 @@ class AccountViewSet(ModelViewSet):
         password = data.get('password')
 
         try:
-            account = Account.objects.get(user_id=uid)
+            account = Account.objects.filter(user_id=uid)
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.account)
         except:
             return err(Msg.Err.Account.get, 'AC-B-001')
 
         if password is not None:
-            account.password = password
-
-        account.save()
+            account.update(password=password)
 
         return success()
 
