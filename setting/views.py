@@ -17,28 +17,26 @@ class SettingViewSet(ModelViewSet):
     def notice(self, request):
         data = request.data
 
-        uid = data.get('uid')
-        is_schedule = data.get('isSchedule')
-        is_countdown = data.get('isCountdown')
-        is_group = data.get('isGroup')
+        uid = data['uid']
+        is_schedule = data['isSchedule']
+        is_countdown = data['isCountdown']
+        is_group = data['isGroup']
 
         try:
-            account = Account.objects.get(user_id=uid)
+            account = Notice.objects.filter(user_id=uid)
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.account, request)
         except:
             return err(Msg.Err.Account.get, 'SE-A-001', request)
 
         if is_schedule is not None:
-            account.is_schedule_notice = is_schedule
+            account.update(is_schedule_notice = is_schedule)
 
         if is_countdown is not None:
-            account.is_countdown_notice = is_countdown
+            account.update(is_countdown_notice = is_countdown)
 
         if is_group is not None:
-            account.is_group_notice = is_group
-
-        account.save()
+            account.update(is_group_notice = is_group)
 
         return success(request=request)
 
@@ -46,20 +44,18 @@ class SettingViewSet(ModelViewSet):
     def notice_temporary(self, request):
         data = request.data
 
-        uid = data.get('uid')
-        is_temporary = data.get('isTemporary')
+        uid = data['uid']
+        is_temporary = data['isTemporary']
 
         try:
-            account = Account.objects.get(user_id=uid)
+            account = Notice.objects.filter(user_id=uid)
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.account, request)
         except:
             return err(Msg.Err.Account.get, 'SE-B-001', request)
 
         if is_temporary is not None:
-            account.is_temporary_group_notice = is_temporary
-
-        account.save()
+            account.update(is_temporary_group_notice=is_temporary)
 
         return success(request=request)
 
@@ -67,20 +63,18 @@ class SettingViewSet(ModelViewSet):
     def themes(self, request):
         data = request.data
 
-        uid = data.get('uid')
-        theme_id = data.get('themeId')
+        uid = data['uid']
+        theme_id = data['themeId']
 
         try:
-            account = Account.objects.get(user_id=uid)
+            account = Account.objects.filter(user_id=uid)
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.account, request)
         except:
             return err(Msg.Err.Account.get, 'SE-C-001', request)
 
         if theme_id is not None:
-            account.theme_id = theme_id
-
-        account.save()
+            account.update(theme_id=theme_id)
 
         return success(request=request)
 
@@ -107,20 +101,18 @@ class SettingViewSet(ModelViewSet):
     def privacy_location(self, request):
         data = request.data
 
-        uid = data.get('uid')
-        is_public = data.get('isPublic')
+        uid = data['uid']
+        is_location = data['isLocation']
 
         try:
-            account = Account.objects.get(user_id=uid)
+            account = Account.objects.filter(user_id=uid)
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.account, request)
         except:
             return err(Msg.Err.Account.get, 'SE-E-001', request)
 
-        if is_public is not None:
-            account.is_public = is_public
-
-        account.save()
+        if is_location is not None:
+            account.update(is_location=is_location)
 
         return success(request=request)
 
@@ -132,16 +124,14 @@ class SettingViewSet(ModelViewSet):
         is_public = data.get('isPublic')
 
         try:
-            account = Account.objects.get(user_id=uid)
+            account = Account.objects.filter(user_id=uid)
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.account, request)
         except:
             return err(Msg.Err.Account.get, 'SE-F-001', request)
 
         if is_public is not None:
-            account.is_public = is_public
-
-        account.save()
+            account.update(is_public=is_public)
 
         return success(request=request)
 
