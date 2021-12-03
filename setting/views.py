@@ -225,10 +225,10 @@ class SettingViewSet(ModelViewSet):
             return err(Msg.Err.Account.get, 'SE-L-001', request)
 
         response = {
-            'scheduleNotice': account.notice.is_schedule_notice,
-            'temporaryNotice': account.notice.is_temporary_group_notice,
-            'countdownNotice': account.notice.is_countdown_notice,
-            'groupNotice': account.notice.is_group_notice
+            'scheduleNotice': bool(account.notice.is_schedule_notice),
+            'temporaryNotice': bool(account.notice.is_temporary_group_notice),
+            'countdownNotice': bool(account.notice.is_countdown_notice),
+            'groupNotice': bool(account.notice.is_group_notice)
         }
 
         return success(response, request)
