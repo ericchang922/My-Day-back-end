@@ -171,7 +171,7 @@ class SettingViewSet(ModelViewSet):
             return err(Msg.Err.Account.get, 'SE-H-001', request)
 
         response = {
-            'location': account.is_location
+            'location': bool(account.is_location)
         }
 
         return success(response, request)
@@ -190,7 +190,7 @@ class SettingViewSet(ModelViewSet):
             return err(Msg.Err.Account.get, 'SE-I-001', request)
 
         response = {
-            'timetable': account.is_public
+            'timetable': bool(account.is_public)
         }
 
         return success(response, request)
