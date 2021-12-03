@@ -36,23 +36,21 @@ class ProfileViewSet(ModelViewSet):
     def edit_profile(self, request):
         data = request.data
 
-        uid = data.get('uid')
-        name = data.get('userName')
-        photo = data.get('photo')
+        uid = data['uid']
+        name = data['userName']
+        photo = data['photo']
 
         try:
-            account = Account.objects.get(user_id=uid)
+            account = Account.objects.filter(user_id=uid)
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.account, request)
         except:
             return err(Msg.Err.Account.get, 'US-B-001', request)
 
         if name is not None:
-            account.name = name
+            account.update(name=name)
 
         if photo is not None:
-            account.photo = photo
-
-        account.save()
+            account.update(photo=photo)
 
         return success(request=request)

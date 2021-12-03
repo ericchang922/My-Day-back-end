@@ -193,9 +193,9 @@ class TimetableViewSet(ModelViewSet):
     def delete_timetable(self, request):
         data = request.data
 
-        uid = data.get('uid')
-        school_year = data.get('schoolYear')
-        semester = data.get('semester')
+        uid = data['uid']
+        school_year = data['schoolYear']
+        semester = data['semester']
         f_semester = f'{school_year}-{semester}'
 
         try:
@@ -218,7 +218,7 @@ class TimetableViewSet(ModelViewSet):
             return err(Msg.Err.Timetable.get_classtime, 'TI-C-002', request)
 
         try:
-            timetable = Timetable.objects.filter(timetalbe_no=p_timetable[0].timetable_no.serial_no)
+            timetable = Timetable.objects.filter(timetable_no=p_timetable[0].timetable_no.serial_no)
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.timetable, request)
         except:
@@ -231,6 +231,14 @@ class TimetableViewSet(ModelViewSet):
         except:
             return err(Msg.Err.get_timetable, 'TI-C-005', request)
 
+        try:
+            share = Sharecode.objects.get(timetable_no=p_timetable[0].timetable_no.serial_no)
+        except ObjectDoesNotExist:
+            return not_found(Msg.NotFound.timetable, request)
+        except:
+            return err(Msg.Err.get_timetable, 'TI-C-005', request)
+
+        share.delete()
         p_timetable.delete()
         p_class.delete()
         p_school.delete()
