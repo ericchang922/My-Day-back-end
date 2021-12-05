@@ -104,9 +104,12 @@ class NoteViewSet(ModelViewSet):
             print(e)
             return err(Msg.Err.Note.select, 'NO-C-001', request)  # -----------------------------------------------001
 
-        group_no = note.group_no.serial_no
+        try:
+            group_no = note.group_no.serial_no
+        except AttributeError:
+            group_no = None
         title = note.title
-        if group_no is None:
+        if group_no is not None:
             return note_is_connect(request=request)
         if note.create_id != uid:
             try:
