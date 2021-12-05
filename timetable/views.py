@@ -598,17 +598,22 @@ class TimetableViewSet(ModelViewSet):
                 timetable = Timetable.objects.get(timetable_no=i.timetable_no, section_no=t.section_no.section_no)
                 subject.append(
                     {
-                        'startTime': t.start,
-                        'endTime': t.end,
+                            'startTime': t.start,
+                            'endTime': t.end,
                     }
-
                 )
+
+            unique = []
+            for j in subject:
+                if j not in unique:
+                    unique.append(j)
+
             p_timetable_list.append(
                 {
                     'semester': i.semester,
                     'startDate': i.semester_start,
                     'endDate': i.semester_end,
-                    'subject': subject
+                    'subject': unique
                 }
             )
         response = {'timetable': p_timetable_list}
