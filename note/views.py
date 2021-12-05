@@ -232,14 +232,14 @@ class NoteViewSet(ModelViewSet):
         note_no = data['noteNum']
 
         try:
-            note = Note.objects.get(serial_no=note_no)
+            note = Note.objects.filter(serial_no=note_no)
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.note, request)
         except Exception as e:
             print(e)
             return err(Msg.Err.Note.select, 'NO-G-001', request)  # -----------------------------------------------001
 
-        if note.create_id != uid:
+        if note.first().create_id != uid:
             return not_found(Msg.NotFound.user_note, request)
 
         try:
@@ -250,14 +250,13 @@ class NoteViewSet(ModelViewSet):
             print(e)
             return err(Msg.Err.Group.member_read, 'NO-G-002', request)  # -----------------------------------------002
 
-        if note.group_no is not None:
+        if note.first().group_no is not None:
             return not_found(Msg.NotFound.note_is_share, request)
-        note.group_no_id = group_no
-        note.save()
+        note.update(group_no=group_no, is_personal=False)
 
         try:
             GroupLog.objects.create(do_time=datetime.now(), group_no_id=group_no, user_id=uid, trigger_type='I',
-                                    do_type_id=7, new=str(note.title))
+                                    do_type_id=7, new=str(note.first().title))
         except Exception as e:
             print(e)
             return err(Msg.Err.Group.log_create, 'NO-G-003', request)  # ------------------------------------------003
@@ -273,21 +272,21 @@ class NoteViewSet(ModelViewSet):
         note_no = data['noteNum']
 
         try:
-            note = Note.objects.get(serial_no=note_no)
+            note = Note.objects.filter(serial_no=note_no)
         except ObjectDoesNotExist:
             return not_found(Msg.NotFound.note, request)
         except Exception as e:
             print(e)
             return err(Msg.Err.Note.select, 'NO-H-001', request)  # -----------------------------------------------001
         try:
-            group_no = note.group_no.serial_no
+            group_no = note.first().group_no.serial_no
         except AttributeError:
             return not_found(Msg.NotFound.note_not_share, request)
         except Exception as e:
             print(e)
             return err(Msg.Err.Note.select, 'NO-H-002', request)  # -----------------------------------------------002
 
-        if note.create_id != uid:
+        if note.first().create_id != uid:
             try:
                 GroupMember.objects.get(user=uid, group_no=group_no, status__in=[1, 4])
             except ObjectDoesNotExist:
@@ -297,13 +296,12 @@ class NoteViewSet(ModelViewSet):
                 return err(Msg.Err.Group.member_read, 'NO-H-003', request)  # -------------------------------------003
             return no_authority('筆記', request)
 
-        note.group_no = None
-        note.save()
+        note.update(group_no=None, is_personal=True)
 
         try:
             GroupLog.objects.create(do_time=datetime.now(), group_no_id=group_no, user_id=uid, trigger_type='D',
                                     do_type_id=7,
-                                    old=str(note.title))
+                                    old=str(note.first().title))
         except Exception as e:
             print(e)
             return err(Msg.Err.Group.log_create, 'NO-H-004', request)  # ------------------------------------------004
