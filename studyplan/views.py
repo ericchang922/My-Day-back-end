@@ -60,9 +60,12 @@ class StudyPlanViewSet(ModelViewSet):
         num = 0
         for subject in subjects:
             num += 1
+            note_no = None
+            if subject['note_no'] and Note.objects.filter(serial_no=subject['note_no'], create_id=uid).exists():
+                note_no = Note.objects.get(pk=subject['note_no'])
             plan_content = PlanContent(plan_no=study_plan, plan_num=num, subject=subject['subject'],
                                        plan_start=subject['plan_start'], plan_end=subject['plan_end'],
-                                       is_rest=subject['is_rest'], remark=subject['remark'])
+                                       note_no=note_no, is_rest=subject['is_rest'], remark=subject['remark'])
             all_subjects.append(plan_content)
         PlanContent.objects.bulk_create(all_subjects)
         return success(request=request)
