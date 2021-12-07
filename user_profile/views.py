@@ -27,7 +27,7 @@ class ProfileViewSet(ModelViewSet):
 
         response = {
             'userName': account.name,
-            'photo': str(account.photo)
+            'photo': account.photo
         }
 
         return success(response, request)
