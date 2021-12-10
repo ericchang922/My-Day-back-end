@@ -21,12 +21,11 @@ class Msg:
             share = '分享錯誤'
             delete_share = '分享刪除錯誤'
 
-
         class Account:
             get = '取得帳號錯誤'
             registered = '此email已被使用'
             account_create = '建立帳號錯誤'
-            login = '登入失敗'
+            login_error = '登入失敗'
             verification_code = '驗證碼錯誤'
 
         class Schedule:
@@ -95,6 +94,7 @@ class Msg:
         # account
         account = '查無使用者'
         verification_code = '查無驗證碼'
+        password_wrong = '密碼錯誤'
 
         # timetable
         timetable = '課表不存在'
