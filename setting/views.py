@@ -205,8 +205,8 @@ class SettingViewSet(ModelViewSet):
         friend = Friend.objects.filter(user_id=uid, related_person=friend_id, relation_id__in=[1, 2])
         if friend.exists():
             return success({
-                'isPublicTimetable': friend.first().is_public_timetable,
-                'isTemporaryGroup': friend.first().is_temporary_group
+                'isPublicTimetable': bool(friend.first().is_public_timetable),
+                'isTemporaryGroup': bool(friend.first().is_temporary_group)
             }, request)
         else:
             return not_found(Msg.NotFound.friend, request)
