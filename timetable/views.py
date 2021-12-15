@@ -312,7 +312,7 @@ class TimetableViewSet(ModelViewSet):
             'endDate': p_timetable.semester_end,
             'subject': subject
         }
-        response = {'timetable': response}
+
         return success(response, request)
 
     @action(detail=False)
