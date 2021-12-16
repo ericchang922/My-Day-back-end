@@ -112,7 +112,7 @@ class AccountViewSet(ModelViewSet):
         except:
             VerificationCode.objects.create(user_id=uid, ver_code=code, create_time=datetime.now())
 
-        send_mail('您的learnAt驗證碼',
+        send_mail('您的My Day驗證碼',
                   '驗證碼：' + code,
                   core.settings.EMAIL_HOST_USER,
                   [uid],
