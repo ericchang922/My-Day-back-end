@@ -312,7 +312,7 @@ class TimetableViewSet(ModelViewSet):
             'endDate': p_timetable.semester_end,
             'subject': subject
         }
-        response = {'timetable': response}
+
         return success(response, request)
 
     @action(detail=False)
@@ -608,12 +608,13 @@ class TimetableViewSet(ModelViewSet):
                 if j not in unique:
                     unique.append(j)
 
+            uniq = sorted(unique, key=lambda x: (x['startTime'], '%H:%M:%S'))
             p_timetable_list.append(
                 {
                     'semester': i.semester,
                     'startDate': i.semester_start,
                     'endDate': i.semester_end,
-                    'subject': unique
+                    'subject': uniq
                 }
             )
         response = {'timetable': p_timetable_list}
