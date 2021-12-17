@@ -55,7 +55,7 @@ class NoteViewSet(ModelViewSet):
             print(e)
             return err(Msg.Err.Note.select, 'NO-B-001', request)  # --------------------------------------001
 
-        group_no = note.group_no.serial_no
+        group_no = note.group_no_id
         if note.create_id != uid:
             try:
                 GroupMember.objects.get(user=uid, group_no=group_no)
